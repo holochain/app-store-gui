@@ -1,0 +1,4 @@
+node_modules
+holochain
+tests/AGENT*
+tests/*.happ
