@@ -35,9 +35,13 @@ build-watch:		static-links
 	WEBPACK_MODE=development npx webpack --watch
 
 test-e2e:		node_modules $(HAPPS)
-	npx mocha tests/e2e/
-test-e2e:		node_modules $(HAPPS)
-	LOG_LEVEL=silly npx mocha tests/e2e/
+	npx mocha -t 5000 tests/e2e/
+test-e2e-debug:		node_modules $(HAPPS)
+	LOG_LEVEL=silly npx mocha -t 5000 tests/e2e/
+test-e2e-crud-publishers:	node_modules $(HAPPS)
+	LOG_LEVEL=silly npx mocha -t 5000 tests/e2e/test_publisher_crud.js
+test-e2e-crud-app:		node_modules $(HAPPS)
+	LOG_LEVEL=silly npx mocha -t 5000 tests/e2e/test_app_crud.js
 
 
 #

@@ -18,19 +18,17 @@ const DEVHUB_PATH			= path.join( __dirname, "../devhub.happ" );
 
 let openstate;
 
-async function publisher_state ( datapath, read, writable ) {
+async function app_state ( datapath, read, writable ) {
     return common.scopedState( openstate, datapath, read, writable, mutable => {
 	mutable.name			= "Testing";
-	mutable.location		= {
-	    "country": "Gibraltar",
-	    "region": "Gibraltar",
-	    "city": "Gibraltar",
-	};
-	mutable.website			= {
-	    "url": "https://github.com/holo-host",
-	    "context": "github",
-	};
+	mutable.description		= "";
 	mutable.icon			= new Uint8Array([1,2,3]);
+	mutable.publisher		= new holohash.ActionHash( crypto.randomBytes(32) );
+	mutable.devhub_address		= {
+	    "dna": new holohash.DnaHash( crypto.randomBytes(32) ),
+	    "happ": new holohash.EntryHash( crypto.randomBytes(32) ),
+	    "gui": new holohash.EntryHash( crypto.randomBytes(32) ),
+	};
     });
 }
 
@@ -44,11 +42,11 @@ function mvp_tests () {
 	expect( info.pubkey.initial	).to.be.a("AgentPubKey");
     });
 
-    it("should create publisher", async function () {
-	const datapath			= `publisher/${common.randomHex()}`;
-	const [$data, data$]		= await publisher_state( datapath );
+    it("should create app", async function () {
+	const datapath			= `app/${common.randomHex()}`;
+	const [$data, data$]		= await app_state( datapath );
 
-	expect( $data.writable	).to.be.true;
+	expect( $data.writable		).to.be.true;
 
 	const data			= await openstate.write( datapath );
 
@@ -59,33 +57,25 @@ function mvp_tests () {
 	expect( $data.writable		).to.be.true;
     });
 
-    it("should get all publishers", async function () {
-	const datapath			= `publishers`;
-	const $data			= openstate.metastate[ datapath ];
-	const data			= await openstate.read( datapath );
+    it("should get all apps", async function () {
+	const datapath			= `apps`;
+	const [$data, data]		= await app_state( datapath, true, false );
 
 	expect( $data.writable		).to.be.false;
 
 	expect( data			).to.have.length( 1 );
     });
 
-    it("should update publisher", async function () {
-	const publishers		= await openstate.read(`publishers`);
-	const datapath			= `publisher/${publishers[0].$id}`;
+    it("should update app", async function () {
+	const apps			= await openstate.read(`apps`);
+	const datapath			= `app/${apps[0].$id}`;
+	const [$data, data$]		= await app_state( datapath, true );
 
-	await openstate.read( datapath );
+	expect( $data.writable		).to.be.true;
 
-	const $data			= openstate.metastate[ datapath ];
-	const data$			= openstate.mutable[ datapath ];
+	data$.description		= "Something";
 
-	expect( $data.writable	).to.be.true;
-
-	data$.website			= {
-	    "url": "https://github.com/holochain",
-	    "context": "github",
-	};
-
-	expect( $data.changed	).to.be.true;
+	expect( $data.changed		).to.be.true;
 
 	const data			= await openstate.write( datapath );
     });
@@ -94,9 +84,9 @@ function mvp_tests () {
 
 function optional_input_tests () {
 
-    it("should create publisher with optional input", async function () {
-	const datapath			= `publisher/${common.randomHex()}`;
-	const [$data, data$]		= await publisher_state( datapath );
+    it("should create app with optional input", async function () {
+	const datapath			= `app/${common.randomHex()}`;
+	const [$data, data$]		= await app_state( datapath );
 
 	expect( $data.writable	).to.be.true;
 
@@ -118,9 +108,9 @@ function optional_input_tests () {
 function invalid_tests () {
 
     it("should have rejections", async function () {
-	const datapath			= `publisher/${common.randomHex()}`;
+	const datapath			= `app/${common.randomHex()}`;
 	const [ $data, data$, _,
-		rejections ]		= await publisher_state( datapath );
+		rejections ]		= await app_state( datapath );
 
 	data$.name			= null;
 
@@ -132,11 +122,16 @@ function invalid_tests () {
 }
 
 
-describe("Openstate: Publisher", () => {
+describe("Openstate: App", () => {
     const crux				= new CruxPayloadParser.CruxConfig();
     const holochain			= new Holochain({
 	"default_stdout_loggers": process.env.LOG_LEVEL === "silly",
 	"timeout": 30_000,
+	clientConstructor ( agent, roles, app_port ) {
+	    return new HolochainClient.AgentClient( agent, roles, app_port, {
+		"timeout": 30_000,
+	    });
+	},
     });
 
     let actors;

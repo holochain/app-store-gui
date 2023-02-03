@@ -495,6 +495,31 @@ const common				= {
 	};
     },
 
+    async scopedState ( openstate, datapath, read = false, writable = true, defaultMutable ) {
+	const metastate			= openstate.metastate[ datapath ];
+
+	if ( read === true )
+	    await openstate.read( datapath );
+
+	const state			= openstate.state[ datapath ];
+	const rejections		= openstate.rejections[ datapath ];
+
+	if ( writable === false )
+	    return [ metastate, state, rejections ];
+
+	const mutable			= openstate.mutable[ datapath ];
+
+	if ( read === false )
+	    defaultMutable( mutable );
+
+	return [
+	    metastate,
+	    mutable,
+	    state,
+	    rejections,
+	];
+    },
+
     isEmpty ( value ) {
 	if ( [null,undefined].includes( value ) )
 	    return false;

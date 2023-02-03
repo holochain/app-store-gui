@@ -30,7 +30,6 @@ module.exports = async function ([ appstore, devhub ]) {
 		    value.published_at	= value.published_at.toISOString();
 		    value.last_updated	= value.last_updated.toISOString();
 		}
-
 		return value;
 	    },
 	},
@@ -117,7 +116,7 @@ module.exports = async function ([ appstore, devhub ]) {
 		return list;
 	    },
 	},
-	"publisher": {
+	"Publisher": {
 	    "path": "publisher/:id",
 	    async read ({ id }) {
 		return await appstore.call("appstore", "appstore_api", "get_publisher", { id });
@@ -133,19 +132,17 @@ module.exports = async function ([ appstore, devhub ]) {
 
 		return publisher;
 	    },
-	    toMutable ({ title, subtitle, description, tags }) {
-		return {
-		    title,
-		    subtitle,
-		    description,
-		    tags,
-		};
+	    toMutable ({ name, location, website }) {
+		return { name, location, website };
 	    },
 	    async update ({ id }, changed, intent ) {
 		return await appstore.call("appstore", "appstore_api", "update_publisher", {
-		    "addr": this.state.$action,
+		    "base": this.state.$action,
 		    "properties": changed,
 		});
+	    },
+	    async delete () {
+		throw new Error(`Publishers cannot be deleted`);
 	    },
 	    "permissions": {
 		async writable ( publisher ) {
@@ -154,6 +151,61 @@ module.exports = async function ([ appstore, devhub ]) {
 		},
 	    },
 	    validation ( data, rejections, intent ) {
+		if ( typeof data.name !== "string" )
+		    rejections.push(`Name is required`);
+	    },
+	},
+	"All apps": {
+	    "path": "apps",
+	    "readonly": true,
+	    async read () {
+		const list		= await appstore.call("appstore", "appstore_api", "get_all_apps");
+
+		for ( let app of list ) {
+		    const path		= `app/${app.$id}`;
+		    this.openstate.state[path]	= app;
+		}
+
+		return list;
+	    },
+	},
+	"App": {
+	    "path": "app/:id",
+	    async read ({ id }) {
+		return await appstore.call("appstore", "appstore_api", "get_app", { id });
+	    },
+	    defaultMutable () {
+		return {
+		};
+	    },
+	    async create ( input ) {
+		const app		= await appstore.call("appstore", "appstore_api", "create_app", input );
+
+		this.openstate.state[`app/${app.$id}`] = app;
+
+		return app;
+	    },
+	    toMutable ({ name, description, publisher, devhub_address }) {
+		return { name, description, publisher, devhub_address };
+	    },
+	    async update ({ id }, changed, intent ) {
+		return await appstore.call("appstore", "appstore_api", "update_app", {
+		    "base": this.state.$action,
+		    "properties": changed,
+		});
+	    },
+	    async delete () {
+		throw new Error(`Apps cannot be deleted`);
+	    },
+	    "permissions": {
+		async writable ( app ) {
+		    const agent_info	= await this.get("agent/me");
+		    return common.hashesAreEqual( app.author, agent_info.pubkey.initial );
+		},
+	    },
+	    validation ( data, rejections, intent ) {
+		if ( typeof data.name !== "string" )
+		    rejections.push(`Name is required`);
 	    },
 	},
     });
