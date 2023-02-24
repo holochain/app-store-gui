@@ -21,15 +21,11 @@ let openstate;
 async function publisher_state ( datapath, read, writable ) {
     return common.scopedState( openstate, datapath, read, writable, mutable => {
 	mutable.name			= "Testing";
-	mutable.location		= {
-	    "country": "Gibraltar",
-	    "region": "Gibraltar",
-	    "city": "Gibraltar",
-	};
-	mutable.website			= {
-	    "url": "https://github.com/holo-host",
-	    "context": "github",
-	};
+	mutable.location.country	= "Gibraltar";
+	mutable.location.region		= "Gibraltar";
+	mutable.location.city		= "Gibraltar";
+	mutable.website.url		= "https://github.com/holo-host";
+	mutable.website.context		= "github";
 	mutable.icon			= new Uint8Array([1,2,3]);
     });
 }

@@ -1,0 +1,110 @@
+<div v-if="app">
+    <identicon-container :seed="id"
+			 id="banner"
+			 class="mb-5 d-flex flex-column-reverse align-items-center exhibit"
+			 style="width: 100%; height: 400px;">
+	<div class="container my-2 position-relative">
+	    <div id="banner-spotlight"
+		 class="rounded-circle border border-2 border-white position-absolute overflow-hidden">
+		<img-src v-if="new_icon" :bytes="new_icon"></img-src>
+		<holochain-img v-else :os-path="'appstore/memory/' + app.icon"></holochain-img>
+
+		<input-file class="position-absolute top-50 start-50 translate-middle"
+			    accept="image/jpeg, .png"
+			    v-model="new_icon">
+		    <a-icon class="btn-primary">
+			<i class="bi-pencil"></i>
+		    </a-icon>
+		</input-file>
+	    </div>
+
+	    <h2 id="page-title">{{ app.name }}</h2>
+	    <span id="page-subtitle">
+		<strong>{{ app.description }}</strong>
+		<span class="fw-light"></span>
+	    </span>
+	</div>
+    </identicon-container>
+    <div class="container my-4">
+	<h4>Details</h4>
+
+	<div class="data-box my-2">
+	    <label class="form-label">App Name</label>
+	    <input class="form-control" v-model="app$.name">
+	</div>
+
+	<div class="data-box my-2">
+	    <label class="form-label">Description</label>
+	    <input class="form-control" v-model="app$.description">
+	</div>
+
+	<div class="data-box my-2">
+	    <label class="form-label">Publisher</label>
+	    <select-search class="form-select" v-model="app$.publisher" placeholder="Filter Publishers">
+		<option value="">Select a Publisher</option>
+		<option v-for="publisher in publishers"
+			:value="publisher.$id">
+		    {{ publisher.name }} ({{ publisher.location.region }}, {{ publisher.location.country }})
+		</option>
+	    </select-search>
+	</div>
+
+
+	<h5 class="mt-4">DevHub Address</h5>
+
+	<div class="data-box my-2">
+	    <label class="form-label">DNA</label>
+	    <input class="form-control" v-model="app$.devhub_address.dna">
+	</div>
+
+	<div class="data-box my-2">
+	    <label class="form-label">hApp</label>
+	    <input class="form-control" v-model="app$.devhub_address.happ">
+	</div>
+
+	<div class="data-box my-2">
+	    <label class="form-label">GUI</label>
+	    <input class="form-control" v-model="app$.devhub_address.gui">
+	</div>
+    </div>
+
+    <div class="container my-4">
+	<div class="d-flex align-items-center">
+	    <h4 class="col">Editor(s)</h4>
+	</div>
+
+	<div v-for="agent in app.editors"
+	     class="data-box my-2 d-flex align-items-center gutters gx-2">
+	    <label>{{ agent }}</label>
+	    <identicon-img :seed="agent" size="50"></identicon-img>
+	</div>
+    </div>
+
+    <div class="container my-4">
+	<div class="d-flex justify-content-end gutters gx-2">
+	    <a class="btn btn-primary"
+	       :class="{ 'disabled': $app.writing }"
+	       @click="update()">
+		Save
+	    </a>
+	    <a class="btn btn-secondary me-0"
+	       @click="navigateBack()">
+		Cancel
+	    </a>
+	</div>
+    </div>
+
+    <notification-bar v-if="$app.failed && actionErrors().length" class="text-danger p-2">
+	<i class="bi-exclamation-triangle-fill"></i>
+	Action Error
+
+	<div slot="details" class="pt-2">
+	    <ul class="list-unstyled text-start d-inline-block">
+		<li v-for="msg in actionErrors()">
+		    <pre v-if="msg.includes('\n')" style="max-width: 100%; overflow-x: auto;">{{ msg }}</pre>
+		    <span v-else>{{ msg }}</span>
+		</li>
+	    </ul>
+	</div>
+    </notification-bar>
+</div>

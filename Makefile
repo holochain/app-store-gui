@@ -18,14 +18,20 @@ reset-lair:
 	rm -rf holochain/lair tests/AGENT*
 reset-all:		reset-holochain reset-lair
 setup:			$(HAPPS)
-	node tests/setup.js
+	node tests/setup.js app-store
+	node tests/setup.js app-store	alice
+	node tests/setup.js devhub	alice
+	node tests/setup.js app-store	bobby
+	node tests/setup.js devhub	bobby
 
 $(DEVHUB_HAPP):
 	$(error Download missing hApp into location ./$@)
 $(APPSTORE_HAPP):
 	$(error Download missing hApp into location ./$@)
-copy-happ-from-local:
-	cp ../../devhub-dnas/DevHub.happ $(DEVHUB_HAPP)
+copy-devhub-from-local:
+	cp ../devhub-dnas/DevHub.happ $(DEVHUB_HAPP)
+copy-appstore-from-local:
+	cp ../app-store-dnas/appstore.happ $(APPSTORE_HAPP)
 
 
 #
@@ -80,7 +86,9 @@ static-links:\
 	static/dependencies/showdown.js\
 	static/dependencies/vue.js\
 	static/dependencies/vuex.js\
-	static/dependencies/vue-router.js
+	static/dependencies/vue-router.js\
+	static/web-components/purewc-template.js\
+	static/web-components/purewc-select-search.js
 static/dependencies:
 	mkdir -p $@
 
@@ -111,6 +119,12 @@ static/dependencies/vuex.js:				node_modules/vuex/dist/vuex.global.js Makefile
 
 static/dependencies/vue-router.js:			node_modules/vue-router/dist/vue-router.global.js Makefile
 	cp $< $@
+static/web-components/purewc-template.js:		node_modules/@purewc/template/dist/purewc-template.js Makefile
+	cp $< $@
+	cp $<.map $@.map
+static/web-components/purewc-select-search.js:		node_modules/@purewc/select-search/dist/purewc-select-search.js Makefile
+	cp $< $@
+	cp $<.map $@.map
 
 use-local-client:
 	npm uninstall @whi/holochain-client

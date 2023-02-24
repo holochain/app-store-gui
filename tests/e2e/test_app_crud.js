@@ -24,11 +24,9 @@ async function app_state ( datapath, read, writable ) {
 	mutable.description		= "";
 	mutable.icon			= new Uint8Array([1,2,3]);
 	mutable.publisher		= new holohash.ActionHash( crypto.randomBytes(32) );
-	mutable.devhub_address		= {
-	    "dna": new holohash.DnaHash( crypto.randomBytes(32) ),
-	    "happ": new holohash.EntryHash( crypto.randomBytes(32) ),
-	    "gui": new holohash.EntryHash( crypto.randomBytes(32) ),
-	};
+	mutable.devhub_address.dna	= new holohash.DnaHash( crypto.randomBytes(32) );
+	mutable.devhub_address.happ	= new holohash.EntryHash( crypto.randomBytes(32) );
+	mutable.devhub_address.gui	= new holohash.EntryHash( crypto.randomBytes(32) );
     });
 }
 
@@ -113,10 +111,14 @@ function invalid_tests () {
 		rejections ]		= await app_state( datapath );
 
 	data$.name			= null;
+	data$.editors			= [
+	    "not an AgentPubKey",
+	];
 
 	expect( $data.valid		).to.be.false;
-	expect( rejections		).to.have.length( 1 );
+	expect( rejections		).to.have.length( 2 );
 	expect( rejections[0]		).to.have.string("required");
+	expect( rejections[1]		).to.have.string("must be an AgentPubKey");
     });
 
 }

@@ -430,7 +430,7 @@ const common				= {
 	    if ( opts.get === true && __getting === false ) {
 		__getting		= true;
 		ctx.$openstate.get( computed_path ).catch(err => {
-		    console.error("Failed to read for scoped path '%s': %s", name, String(err) );
+		    console.error("Failed to read for scoped path '%s' (%s):", computed_path, name, err );
 		});
 	    }
 

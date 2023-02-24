@@ -1,0 +1,74 @@
+<div v-if="app">
+    <layout-banner :seed="id" class="pb-5">
+	<h2 id="page-title">{{ app.name }}</h2>
+	<span id="page-subtitle">
+	    <strong>{{ app.description }}</strong>
+	    <span class="fw-light"></span>
+	</span>
+
+	<div slot="spotlight">
+	    <holochain-img class="img" :os-path="'appstore/memory/' + app.icon"></holochain-img>
+	</div>
+
+	<div slot="actions">
+	    <router-link :to="'/apps/' + id + '/update'">
+		<a-icon class="btn-primary">
+		    <i class="bi-pencil"></i>
+		</a-icon>
+	    </router-link>
+	</div>
+    </layout-banner>
+
+    <div class="container my-4">
+	<div class="d-flex align-items-center">
+	    <h4 class="col">Details</h4>
+	    <a-icon class="col-auto btn-primary"
+		    @click="downloadApp()">
+		<div v-if="$package.reading"
+		     class="spinner-border mt-1" role="status">
+		    <span class="visually-hidden">Loading...</span>
+		</div>
+		<i v-else class="bi-download"></i>
+	    </a-icon>
+	</div>
+
+	<router-link v-if="publisher"
+		     class="transparent"
+		     :to="'/publishers/' + publisher.$id">
+	    <div class="data-box my-2">
+		<label>Publisher</label>
+		<p>
+		    {{ publisher.name }}
+		    <span class="fw-light">({{ publisher.location.region }}, {{ publisher.location.country }})</span>
+		</p>
+	    </div>
+	</router-link>
+
+	<h6 class="mt-3">DevHub Address</h6>
+
+	<div class="data-box my-2">
+	    <label>DNA</label>
+	    <p>{{ app.devhub_address.dna }}</p>
+	</div>
+	<div class="data-box my-2">
+	    <label>hApp</label>
+	    <p>{{ app.devhub_address.happ }}</p>
+	</div>
+	<div class="data-box my-2">
+	    <label>GUI</label>
+	    <p>{{ app.devhub_address.gui }}</p>
+	</div>
+    </div>
+
+    <div class="container my-4">
+	<div class="d-flex align-items-center">
+	    <h4 class="col">Editor(s)</h4>
+	</div>
+
+	<div v-for="agent in app.editors"
+	     class="data-box my-2 d-flex align-items-center gutters gx-2">
+	    <label>{{ agent }}</label>
+	    <identicon-img :seed="agent" size="50"></identicon-img>
+	</div>
+    </div>
+</div>

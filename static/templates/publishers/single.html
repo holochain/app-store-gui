@@ -1,0 +1,52 @@
+<div v-if="publisher">
+    <identicon-container :seed="id"
+			 id="header"
+			 class="mb-5 d-flex flex-column-reverse align-items-center exhibit"
+			 style="width: 100%; height: 400px;">
+	<div class="container my-2 position-relative">
+	    <div class="rounded-circle border border-2 border-white position-absolute overflow-hidden"
+		 style="bottom: -100px; left: -330px; width: 300px; height: 300px; background-color: #808080;">
+		<holochain-img :os-path="'appstore/memory/' + publisher.icon"></holochain-img>
+	    </div>
+
+	    <h2 id="page-title">{{ publisher.name }}</h2>
+	    <span id="page-subtitle">
+		<strong>{{ publisher.location.country }}</strong>
+		<span class="fw-light">, {{ publisher.location.region }}, {{ publisher.location.city }}</span>
+	    </span>
+	</div>
+	<div class="position-absolute bottom-0 end-0 pb-3 pe-5">
+	    <router-link :to="'/publishers/' + id + '/update'">
+		<a-icon class="btn-primary">
+		    <i class="bi-pencil"></i>
+		</a-icon>
+	    </router-link>
+	</div>
+    </identicon-container>
+
+    <div class="container my-4">
+	<h4>Details</h4>
+
+	<div class="data-box my-2" v-if="publisher.email">
+	    <label>Email</label>
+	    <p><a :href="'mailto:' + publisher.email">{{ publisher.email }}</a></p>
+	</div>
+
+	<div class="data-box my-2">
+	    <label>{{ publisher.website.context }}</label>
+	    <p><a :href="publisher.website.url" target="_blank">{{ publisher.website.url }}</a></p>
+	</div>
+    </div>
+
+    <div class="container my-4">
+	<div class="d-flex align-items-center">
+	    <h4 class="col">Editor(s)</h4>
+	</div>
+
+	<div v-for="agent in publisher.editors"
+	     class="data-box my-2 d-flex align-items-center gutters gx-2">
+	    <label>{{ agent }}</label>
+	    <identicon-img :seed="agent" size="50"></identicon-img>
+	</div>
+    </div>
+</div>

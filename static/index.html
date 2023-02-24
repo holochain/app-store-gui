@@ -1,0 +1,120 @@
+<!doctype html>
+<html >
+    <head>
+	<title>App Store</title>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- ####################
+	         Application
+	     #################### -->
+
+	<!-- Libraries -->
+	<script src="dependencies/identicons.bundled.js"></script>
+
+	<script src="/dependencies/vue.js"></script>
+	<script src="/dependencies/vuex.js"></script>
+	<script src="/dependencies/vue-router.js"></script>
+
+	<script src="/dependencies/crux-payload-parser.js"></script>
+	<script src="/dependencies/holochain-client/holochain-client.js"></script>
+	<script src="/dependencies/holo-hash.js"></script>
+	<script src="/dependencies/showdown.js"></script>
+
+	<!-- ####################
+                Web Components
+	     #################### -->
+
+	<!-- Lit -->
+	<script src="lit/lit.bundled.js"></script>
+	<script type="text/javascript">
+	  const { LitElement, nothing,
+		  html, css, unsafeCSS, classMap, styleMap,
+		  repeat }			= Lit;
+	</script>
+
+	<script type="module">
+	    import { HTMLSelectSearchElement } from '/web-components/purewc-select-search.js';
+
+	    customElements.define("select-search", HTMLSelectSearchElement );
+	    // customElements.define("toast-list", HTMLToastListElement );
+	</script>
+
+	<!-- Elements -->
+	<script src="custom-elements.js"></script>
+	<script src="anchor-icon.js"></script>
+
+
+	<!-- PureWC -->
+	<script src="/web-components/purewc-template.js"></script>
+
+	<script src="/web-components/layout-banner.js"></script>
+	<script src="/web-components/notification-bar.js"></script>
+	<script src="/web-components/notification-toast.js"></script>
+	<script src="/web-components/input-file.js"></script>
+	<script src="/web-components/img-src.js"></script>
+	<script src="/web-components/holochain-img.js"></script>
+
+
+	<!-- ####################
+	            Design
+	     #################### -->
+
+	<!-- Boostrap -->
+	<link rel="stylesheet" href="bootstrap-v5/v5.2.3/bootstrap.css">
+	<link rel="stylesheet" href="bootstrap-icons-v1/bootstrap-icons-v1.9.1.css">
+	<!-- Bootstrap Overrides -->
+	<link rel="stylesheet" href="css/bootstrap-theme.css">
+	<!-- Font -->
+	<link rel="stylesheet" href="googlefonts/mulish.css">
+    </head>
+    <body>
+	<div id="app">
+	    <div id="header">
+		<div class="col">
+		    <div class="d-flex align-items-center">
+			<router-link to="/" class="transparent">
+			    <img src="images/holochain-icon.png">
+			    <span class="brand fw-bolder mx-2">App Store</span>
+			</router-link>
+		    </div>
+		</div>
+		<div class="col-auto">
+		    <div class="d-flex align-items-center gutters gx-4">
+			<a class="btn btn-link">DevHub</a>
+			<router-link class="btn btn-primary"
+				     to="/apps/new">Add App</router-link>
+			<div class="d-flex align-items-center gutters gx-1">
+			    <router-link to="/profile">
+				<identicon-img v-cloak v-if="agent"
+					       :seed="agent?.pubkey.initial"
+					       size="50"></identicon-img>
+			    </router-link>
+			    <i class="bi-caret-down-fill"></i>
+			</div>
+		    </div>
+		</div>
+	    </div>
+	    <!-- <pre>{{ $debug( agent ) }}</pre> -->
+
+	    <router-view id="main"
+			 :key="$route.fullPath"></router-view>
+
+	    <div id="footer"></div>
+	</div>
+
+	<!-- ####################
+	         Application
+	     #################### -->
+
+	<script src="/dist/webpacked.app.js" async></script>
+
+	<!-- Bootstrap -->
+	<script src="/jquery-v3/jquery-v3.5.1.slim.min.js"
+		integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+	<script src="/popper-v2/popper-v2.9.2.min.js"
+		integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+	<script src="/bootstrap-v5/v5.2.3/bootstrap.bundle.js"></script>
+    </body>
+</html>
