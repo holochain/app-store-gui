@@ -7,22 +7,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
 	<!-- ####################
-	         Application
-	     #################### -->
-
-	<!-- Libraries -->
-	<script src="dependencies/identicons.bundled.js"></script>
-
-	<script src="/dependencies/vue.js"></script>
-	<script src="/dependencies/vuex.js"></script>
-	<script src="/dependencies/vue-router.js"></script>
-
-	<script src="/dependencies/crux-payload-parser.js"></script>
-	<script src="/dependencies/holochain-client/holochain-client.js"></script>
-	<script src="/dependencies/holo-hash.js"></script>
-	<script src="/dependencies/showdown.js"></script>
-
-	<!-- ####################
                 Web Components
 	     #################### -->
 
@@ -55,6 +39,23 @@
 	<script src="/web-components/input-file.js"></script>
 	<script src="/web-components/img-src.js"></script>
 	<script src="/web-components/holochain-img.js"></script>
+
+
+	<!-- ####################
+	         Application
+	     #################### -->
+
+	<!-- Libraries -->
+	<script src="dependencies/identicons.bundled.js"></script>
+
+	<script src="/dependencies/vue.js"></script>
+	<script src="/dependencies/vuex.js"></script>
+	<script src="/dependencies/vue-router.js"></script>
+
+	<script src="/dependencies/crux-payload-parser.js"></script>
+	<script src="/dependencies/holochain-client/holochain-client.js"></script>
+	<script src="/dependencies/holo-hash.js"></script>
+	<script src="/dependencies/showdown.js"></script>
 
 
 	<!-- ####################
@@ -98,11 +99,25 @@
 	    </div>
 	    <!-- <pre>{{ $debug( agent ) }}</pre> -->
 
-	    <router-view id="main"
-			 :key="$route.fullPath"></router-view>
+	    <div class="col">
+		<router-view id="main"
+			     :key="$route.fullPath"></router-view>
+	    </div>
 
 	    <div id="footer"></div>
+
+	    <notification-box v-cloak
+			      bottom right
+			      class="mx-3">
+		<notification-toast v-for="(message, index) in errors"
+				    class="p-2 my-2 text-danger"
+				    @dismiss="dismissError( index )">
+		    <i class="bi-exclamation-triangle-fill me-1"></i>
+		    {{ message }}
+		</notification-toast>
+	    </notification-box>
 	</div>
+
 
 	<!-- ####################
 	         Application

@@ -7,6 +7,8 @@ const appstore_config			= require('./openstate_configs/appstore.js');
 const { reactive }			= Vue;
 const { EntityArchitect }		= CruxPayloadParser;
 const { Entity }			= EntityArchitect;
+const { HoloHash,
+	AgentPubKey }			= holohash;
 
 module.exports = async function ([ appstore ]) {
     const openstate			= new OpenState.create({
@@ -14,6 +16,8 @@ module.exports = async function ([ appstore ]) {
 	"globalDefaults": {
 	    adapter ( value ) {
 		if ( value instanceof Entity ) {
+		    if ( value.author )
+			value.author		= new AgentPubKey( value.author );
 		    if ( value.published_at )
 			value.published_at	= new Date( value.published_at );
 		    if ( value.last_updated )

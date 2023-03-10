@@ -54,7 +54,8 @@
 	    <label>hApp</label>
 	    <p>{{ app.devhub_address.happ }}</p>
 	</div>
-	<div class="data-box my-2">
+	<div v-if="app.devhub_address.gui"
+	     class="data-box my-2">
 	    <label>GUI</label>
 	    <p>{{ app.devhub_address.gui }}</p>
 	</div>

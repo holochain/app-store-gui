@@ -25,7 +25,7 @@ const apps_init				= require('./app_controllers.js');
 const HOST_VALUE			= localStorage.getItem("APP_HOST");
 const PORT_VALUE			= localStorage.getItem("APP_PORT");
 const APP_PORT				= parseInt( PORT_VALUE ) || 44001;
-const APP_HOST				= HOST_VALUE || "localhost";
+const APP_HOST				= HOST_VALUE || "127.0.0.1";
 const CONDUCTOR_URI			= `${APP_HOST}:${APP_PORT}`;
 
 if ( isNaN( APP_PORT ) )
@@ -85,18 +85,21 @@ if ( isNaN( APP_PORT ) )
 	"linkExactActiveClass": "active",
     });
 
+    let $root;
     const app				= Vue.createApp({
 	data () {
 	    return {
 		"show_copied_message": false,
 		"status_view_data": null,
 		"status_view_html": null,
+		"errors": [],
 	    };
 	},
 	"computed": {
 	    ...common.scopedPathComputed( "agent/me", "agent" ),
 	},
 	async created () {
+	    $root			= this;
 	    const { TimeoutError }	= await HolochainClient;
 
 	    this.$router.afterEach( (to, from, failure) => {
@@ -128,6 +131,9 @@ if ( isNaN( APP_PORT ) )
 
 	},
 	"methods": {
+	    dismissError ( index ) {
+		this.errors.splice( index, 1 );
+	    },
 	},
     });
 
@@ -243,15 +249,24 @@ if ( isNaN( APP_PORT ) )
 	breadcrumb_mapping,
     });
 
-    app.config.errorHandler		= function (err, vm, info) {
-	log.error("Vue App Error (%s):", info, err, vm );
-    };
     app.config.compilerOptions.isCustomElement = (tag) => {
 	if ( tag.startsWith("router") )
 	    return false;
 
 	return tag.includes('-');
     };
+
+    app.config.errorHandler		= function (err, vm, info) {
+	log.error("Vue App Error (%s):", info, err, vm );
+	$root.errors.push( err.message );
+    };
+
+    window.addEventListener("unhandledrejection", (event) => {
+	$root.errors.push( event.reason );
+    });
+    window.addEventListener("error", (err) => {
+	$root.errors.push( err.message );
+    });
 
 
     app.use( router );

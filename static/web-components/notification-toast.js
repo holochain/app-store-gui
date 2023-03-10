@@ -1,25 +1,23 @@
 class HTMLNotificationToastElement extends HTMLElementTemplate {
     static CSS				= `
 :host {
-    position: fixed;
-    z-index: 1090;
-
-    width: 350px;
-    max-width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    width: 100%;
     background-color: rgba(255, 255, 255, 0.9);
     background-clip: padding-box;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
-
 .toast {
-    display: flex;
+    flex-grow: 1;
 }
 
-.toast-body > i {
+.toast > i {
     margin-right: 8px;
 }
 
-.btn-close {
+.dismiss {
     box-sizing: content-box;
     width: 1em;
     height: 1em;
@@ -36,19 +34,51 @@ class HTMLNotificationToastElement extends HTMLElementTemplate {
 `;
 
     static template			= `
-<div class="toast align-items-center show"
-     role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="toast-body p-2 text-danger">
-        <slot></slot>
-    </div>
-    <a class="btn-close me-2 m-auto"></a>
+<div class="toast">
+    <slot></slot>
 </div>
+<a class="dismiss"></a>
 `;
     static refs				= {
 	"$toast":		`.toast`,
 	"$body":		`.toast-body`,
-	"$close":		`.btn-close`,
+	"$dismiss":		`.dismiss`,
     };
+
+
+    // Element constants
+
+    static properties			= {};
+
+
+    constructor () {
+	super();
+
+	this.$dismiss.addEventListener("click", event => {
+	    this.dispatchEvent( new Event('dismiss') );
+	});
+    }
+}
+
+customElements.define("notification-toast", HTMLNotificationToastElement );
+
+
+class HTMLNotificationBoxElement extends HTMLElementTemplate {
+    static CSS				= `
+:host {
+    position: fixed;
+    z-index: 1090;
+
+    box-sizing: border-box;
+    width: 50vw;
+    max-width: 100%;
+}
+`;
+
+    static template			= `
+<slot></slot>
+`;
+    static refs				= {};
 
 
     // Element constants
@@ -59,52 +89,29 @@ class HTMLNotificationToastElement extends HTMLElementTemplate {
 	"left",
 	"right",
     ];
+
     static properties			= {
 	"top": {
 	    updateDOM () {
-		this.style.top = this.top;
+		this.style.top = this.top || 0;
 	    },
 	},
 	"bottom": {
 	    updateDOM () {
-		this.style.bottom = this.bottom;
+		this.style.bottom = this.bottom || 0;
 	    },
 	},
 	"left": {
 	    updateDOM () {
-		this.style.left = this.left;
+		this.style.left = this.left || 0;
 	    },
 	},
 	"right": {
 	    updateDOM () {
-		this.style.right = this.right;
+		this.style.right = this.right || 0;
 	    },
 	},
     };
-
-
-    constructor () {
-	super();
-
-	this.$close.addEventListener("click", event => {
-	    this.dispatchEvent( new Event('close') );
-	});
-    }
-
-    connectedCallback() {
-    }
-
-    mutationCallback() {
-    }
-
-
-    // Property/attribute controllers
-
-
-    // Methods
-
-
-    // Event handlers
 }
 
-customElements.define("notification-toast", HTMLNotificationToastElement );
+customElements.define("notification-box", HTMLNotificationBoxElement );

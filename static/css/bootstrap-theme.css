@@ -35,6 +35,11 @@ html, body {
   overflow-y: auto;
   font-family: 'Mulish', sans-serif;
 }
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 [v-cloak] {
   display: none;
 }

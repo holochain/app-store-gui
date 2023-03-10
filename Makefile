@@ -19,9 +19,7 @@ reset-lair:
 reset-all:		reset-holochain reset-lair
 setup:			$(HAPPS)
 	node tests/setup.js app-store
-	node tests/setup.js app-store	alice
 	node tests/setup.js devhub	alice
-	node tests/setup.js app-store	bobby
 	node tests/setup.js devhub	bobby
 
 $(DEVHUB_HAPP):
@@ -29,7 +27,7 @@ $(DEVHUB_HAPP):
 $(APPSTORE_HAPP):
 	$(error Download missing hApp into location ./$@)
 copy-devhub-from-local:
-	cp ../devhub-dnas/DevHub.happ $(DEVHUB_HAPP)
+	cp ../app-store-dnas/tests/devhub.happ $(DEVHUB_HAPP)
 copy-appstore-from-local:
 	cp ../app-store-dnas/appstore.happ $(APPSTORE_HAPP)
 
@@ -139,6 +137,13 @@ use-local-backdrop:
 use-npm-backdrop:
 	npm uninstall @whi/holochain-backdrop
 	npm install --save @whi/holochain-backdrop
+
+use-local-openstate:
+	npm uninstall openstate
+	npm install --save ../openstate-js/
+use-npm-openstate:
+	npm uninstall openstate
+	npm install --save openstate
 
 
 #

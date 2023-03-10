@@ -187,7 +187,9 @@ module.exports				= appstore => ({
 
 	    entity.devhub_address.dna		= new DnaHash( entity.devhub_address.dna );
 	    entity.devhub_address.happ		= new EntryHash( entity.devhub_address.happ );
-	    entity.devhub_address.gui		= new EntryHash( entity.devhub_address.gui );
+
+	    if ( entity.devhub_address.gui )
+		entity.devhub_address.gui	= new EntryHash( entity.devhub_address.gui );
 
 	    for ( let i in entity.editors )
 		entity.editors[ i ]		= new AgentPubKey( entity.editors[i] );
@@ -217,7 +219,7 @@ module.exports				= appstore => ({
 		"devhub_address": {
 		    "dna":	String( devhub_address.dna ),
 		    "happ":	String( devhub_address.happ ),
-		    "gui":	String( devhub_address.gui ),
+		    "gui":	devhub_address.gui ? String( devhub_address.gui ) : devhub_address.gui,
 		},
 	    };
 	},
@@ -272,8 +274,8 @@ module.exports				= appstore => ({
 		    rejections.push(`DevHub Address DNA Hash is required`);
 		if ( typeof data.devhub_address.happ !== "string" )
 		    rejections.push(`DevHub Address hApp ID is required`);
-		if ( typeof data.devhub_address.gui !== "string" )
-		    rejections.push(`DevHub Address GUI ID is required`);
+		if ( data.devhub_address.gui && typeof data.devhub_address.gui !== "string" )
+		    rejections.push(`DevHub Address GUI ID must be a string`);
 	    }
 
 	    if ( data.editors !== undefined && data.editors !== null ) {
@@ -301,11 +303,147 @@ module.exports				= appstore => ({
 	    return await this.openstate.read(`publisher/${app.publisher}`);
 	},
     },
+    "Portal Host": {
+	"path": "portal/host/:id",
+	async read ({ id }) {
+	    return await appstore.call("portal", "portal_api", "get_host", {
+		id,
+	    });
+	},
+    },
+    "DevHub Hosts for DNA": {
+	"path": "devhub/hosts/:dna",
+	"readonly": true,
+	async read ({ dna }) {
+	    const list				= await appstore.call("appstore", "appstore_api", "get_registered_hosts", dna );
+
+	    for ( let host of list ) {
+		const path			= `portal/host/${host.$id}`;
+		this.openstate.state[path]	= host;
+	    }
+
+	    return list;
+	},
+    },
+    "DevHub Hosts for DNA/Zome/Function": {
+	"path": "devhub/hosts/:dna/:zome/:func",
+	"readonly": true,
+	async read ({ dna, zome, func }) {
+	    const list				= await appstore.call("appstore", "appstore_api", "get_hosts_for_zome_function", {
+		"dna": dna,
+		"zome": zome,
+		"function": func,
+	    });
+
+	    for ( let host of list ) {
+		const path			= `portal/host/${host.$id}`;
+		this.openstate.state[path]	= host;
+	    }
+
+	    return list;
+	},
+    },
+    "DevHub Hosts for DNA/Zome/Function Ping Promises": {
+	"path": "devhub/hosts/:dna/:zome/:func/pings",
+	"readonly": true,
+	async read ({ dna, zome, func }) {
+	    const hosts				= await this.openstate.get(`devhub/hosts/${dna}/${zome}/${func}`);
+
+	    if ( hosts.length === 0 )
+		throw new Error(`No hosts for ${dna}/${zome}/${func}`);
+
+	    return hosts.map( async host => {
+		await appstore.call("portal", "portal_api", "ping", host.author, 1_000 );
+		return host;
+	    });
+	},
+    },
+    "Active DevHub Hosts for DNA/Zome/Function": {
+	"path": "devhub/hosts/:dna/:zome/:func/active",
+	"readonly": true,
+	async read ({ dna, zome, func }) {
+	    const pings				= await this.openstate.get(`devhub/hosts/${dna}/${zome}/${func}/pings`);
+
+	    let active_hosts			= [];
+	    for ( let ping of pings ) {
+		try {
+		    let host			= await ping;
+		    active_hosts.push( host );
+		} catch (err) {
+		    console.error("PING", err );
+		}
+	    }
+
+	    return active_hosts;
+	},
+    },
+    "Any Available DevHub Host for DNA/Zome/Function": {
+	"path": "devhub/hosts/:dna/:zome/:func/any",
+	"readonly": true,
+	async read ({ dna, zome, func }) {
+	    const pings				= await this.openstate.get(`devhub/hosts/${dna}/${zome}/${func}/pings`);
+	    return await Promise.any( pings );
+	},
+    },
     "App Package": {
 	"path": "app/:id/package",
 	"readonly": true,
 	async read ({ id }) {
-	    const bytes				= await appstore.call("appstore", "appstore_api", "get_app_package", { id }, 60_000 );
+	    async function portal_call ( dna, zome, func, payload, timeout ) {
+		const available_host		= await this.openstate.get(`devhub/hosts/${dna}/${zome}/${func}/any`);
+		const dna_hash			= await appstore.call("appstore", "appstore_api", "get_dna_hash", dna );
+		const call_details		= {
+		    "dna": dna_hash,
+		    "zome": zome,
+		    "function": func,
+		    "payload": payload,
+		};
+		return await appstore.call("portal", "portal_api", "custom_remote_call", {
+		    "host": available_host.author,
+		    "call": call_details,
+		}, timeout );
+	    }
+
+	    const app				= await this.openstate.get(`app/${id}`);
+
+	    const happ_releases			= await portal_call( "happs", "happ_library", "get_happ_releases", {
+		"for_happ": app.devhub_address.happ,
+	    }, 10_000 );
+
+	    if ( happ_releases.length === 0 ) {
+		const happ			= await portal_call( "happs", "happ_library", "get_happ", {
+		    "id": app.devhub_address.happ,
+		}, 10_000 );
+
+		throw new Error(`There are no releases for hApp ${happ.title} (${happ.$id})`);
+	    }
+
+	    const latest_happ_release		= happ_releases[0];
+
+	    if ( !(app.devhub_address.gui || latest_happ_release.official_gui) )
+		throw new Error(`No Official GUI for hApp Release '${latest_happ_release.name}' (${latest_happ_release.$id})`);
+
+	    const gui_id			= app.devhub_address.gui || latest_happ_release.official_gui;
+	    const gui_releases			= await portal_call( "happs", "happ_library", "get_gui_releases", {
+		"for_gui": gui_id,
+	    }, 10_000 );
+
+	    if ( gui_releases.length === 0 ) {
+		const gui			= await portal_call( "happs", "happ_library", "get_gui", {
+		    "id": gui_id,
+		}, 10_000 );
+
+		throw new Error(`There are no releases for GUI '${gui.name}' (${gui.$id})`);
+	    }
+
+	    const latest_gui_release		= gui_releases[0];
+
+	    const bytes				= await portal_call( "happs", "happ_library", "get_webhapp_package", {
+		"name": app.name,
+		"happ_release_id": latest_happ_release.$id,
+		"gui_release_id": latest_gui_release.$id,
+	    }, 60_000 );
+
 	    return new Uint8Array( bytes );
 	},
     },

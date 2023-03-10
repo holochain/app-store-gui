@@ -1,5 +1,6 @@
 node_modules
 holochain
+tests/DNA_*
 tests/AGENT*
 tests/*.happ
 static/dist

@@ -7,6 +7,7 @@ global.WebSocket			= require('ws');
 
 const fs				= require('fs');
 const { AdminClient,
+	AgentClient,
 	ConductorError,
 	...hc_client }			= require('@whi/holochain-client');
 
@@ -21,6 +22,7 @@ const HAPPS				= {
 };
 
 const PORT				= 35678;
+const APP_PORT				= 44001
 const admin				= new AdminClient( PORT );
 
 function print ( msg, ...args ) {
@@ -35,7 +37,7 @@ function print ( msg, ...args ) {
 	      ? "AGENT" : `AGENT_${AGENT_NICKNAME}`;
 
 	try {
-	    await admin.attachAppInterface( 44001 );
+	    await admin.attachAppInterface( APP_PORT );
 	} catch (err) {
 	    if ( !( err instanceof ConductorError
 		    && err.message.includes("Address already in use") ) )
@@ -67,7 +69,9 @@ function print ( msg, ...args ) {
 	try {
 	    if ( !installation ) {
 		installation		= await admin.installApp(
-		    APP_ID, agent_hash, HAPP_FILE
+		    APP_ID, agent_hash, HAPP_FILE, {
+			"network_seed": "test-network",
+		    }
 		);
 	    }
 	} catch (err) {
@@ -98,7 +102,34 @@ function print ( msg, ...args ) {
 	print("Creating unrestricted cap grant for testing");
 	for ( let role_name in app_info.roles ) {
 	    const dna_hash		= app_info.roles[ role_name ].cell_id[0];
+	    log.normal("DNA hash for '%s': %s", role_name, dna_hash );
 	    await admin.grantUnrestrictedCapability( "testing", agent_hash, dna_hash, "*" );
+
+	    const filename		= path.resolve( __dirname, `DNA_${role_name.toUpperCase()}` );
+	    fs.writeFileSync( filename, `${dna_hash}\n` );
+	}
+
+	if ( APP_PREFIX === "devhub" ) {
+	    print("Registering %s as a portal host of DevHub's happ_library", AGENT_NICKNAME );
+	    const client			= await AgentClient.createFromAppInfo( APP_ID, APP_PORT );
+	    try {
+		await client.call("portal", "portal_api", "register_host", {
+		    "dna": client._app_schema._dnas.happs._hash,
+		    "granted_functions": {
+			"Listed": [
+			    [ "happ_library", "get_webhapp_package" ],
+			    [ "happ_library", "get_happ" ],
+			    [ "happ_library", "get_happ_release" ],
+			    [ "happ_library", "get_happ_releases" ],
+			    [ "happ_library", "get_gui" ],
+			    [ "happ_library", "get_gui_release" ],
+			    [ "happ_library", "get_gui_releases" ],
+			],
+		    },
+		});
+	    } finally {
+		await client.close();
+	    }
 	}
     } catch (err) {
 	console.log("Setup exiting in failure:");
