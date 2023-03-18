@@ -9,7 +9,20 @@ const { HoloHash,
 	DnaHash,
 	AgentPubKey }			= holohash;
 
-module.exports				= appstore => ({
+function assert_holohash ( input, type ) {
+    let hash			= new HoloHash( input );
+    if ( type && hash.constructor.name !== type )
+	throw new TypeError(`Wrong HoloHash type '${hash.constructor.name}'; expected '${type}'`);
+}
+
+module.exports				= (appstore, devhub) => ({
+    "DNA Alias": {
+	"path": "dna/alias/:alias",
+	"readonly": true,
+	async read ({ alias }) {
+	    return new DnaHash( await appstore.call("appstore", "appstore_api", "get_dna_hash", alias ) );
+	},
+    },
     "Agent": {
 	"path": "agent/:id",
 	"readonly": true,
@@ -270,11 +283,14 @@ module.exports				= appstore => ({
 	    if ( !data.devhub_address )
 		rejections.push(`DevHub Address is required`);
 	    else {
-		if ( typeof data.devhub_address.dna !== "string" )
+		if ( !(typeof data.devhub_address.dna === "string"
+		       || data.devhub_address.dna instanceof HoloHash ) )
 		    rejections.push(`DevHub Address DNA Hash is required`);
-		if ( typeof data.devhub_address.happ !== "string" )
+		if ( !(typeof data.devhub_address.happ === "string"
+		       || data.devhub_address.happ instanceof HoloHash ) )
 		    rejections.push(`DevHub Address hApp ID is required`);
-		if ( data.devhub_address.gui && typeof data.devhub_address.gui !== "string" )
+		if ( data.devhub_address.gui && !(typeof data.devhub_address.gui === "string"
+		       || data.devhub_address.gui instanceof HoloHash ) )
 		    rejections.push(`DevHub Address GUI ID must be a string`);
 	    }
 
@@ -389,29 +405,14 @@ module.exports				= appstore => ({
 	"path": "app/:id/package",
 	"readonly": true,
 	async read ({ id }) {
-	    async function portal_call ( dna, zome, func, payload, timeout ) {
-		const available_host		= await this.openstate.get(`devhub/hosts/${dna}/${zome}/${func}/any`);
-		const dna_hash			= await appstore.call("appstore", "appstore_api", "get_dna_hash", dna );
-		const call_details		= {
-		    "dna": dna_hash,
-		    "zome": zome,
-		    "function": func,
-		    "payload": payload,
-		};
-		return await appstore.call("portal", "portal_api", "custom_remote_call", {
-		    "host": available_host.author,
-		    "call": call_details,
-		}, timeout );
-	    }
-
 	    const app				= await this.openstate.get(`app/${id}`);
 
-	    const happ_releases			= await portal_call( "happs", "happ_library", "get_happ_releases", {
+	    const happ_releases			= await devhub.call( "happs", "happ_library", "get_happ_releases", {
 		"for_happ": app.devhub_address.happ,
 	    }, 10_000 );
 
 	    if ( happ_releases.length === 0 ) {
-		const happ			= await portal_call( "happs", "happ_library", "get_happ", {
+		const happ			= await devhub.call( "happs", "happ_library", "get_happ", {
 		    "id": app.devhub_address.happ,
 		}, 10_000 );
 
@@ -424,12 +425,12 @@ module.exports				= appstore => ({
 		throw new Error(`No Official GUI for hApp Release '${latest_happ_release.name}' (${latest_happ_release.$id})`);
 
 	    const gui_id			= app.devhub_address.gui || latest_happ_release.official_gui;
-	    const gui_releases			= await portal_call( "happs", "happ_library", "get_gui_releases", {
+	    const gui_releases			= await devhub.call( "happs", "happ_library", "get_gui_releases", {
 		"for_gui": gui_id,
 	    }, 10_000 );
 
 	    if ( gui_releases.length === 0 ) {
-		const gui			= await portal_call( "happs", "happ_library", "get_gui", {
+		const gui			= await devhub.call( "happs", "happ_library", "get_gui", {
 		    "id": gui_id,
 		}, 10_000 );
 
@@ -438,7 +439,7 @@ module.exports				= appstore => ({
 
 	    const latest_gui_release		= gui_releases[0];
 
-	    const bytes				= await portal_call( "happs", "happ_library", "get_webhapp_package", {
+	    const bytes				= await devhub.call( "happs", "happ_library", "get_webhapp_package", {
 		"name": app.name,
 		"happ_release_id": latest_happ_release.$id,
 		"gui_release_id": latest_gui_release.$id,
@@ -464,6 +465,250 @@ module.exports				= appstore => ({
 		rejections.push(`Missing bytes`);
 	    else if ( data.length === 0 )
 		rejections.push(`Byte length is 0`);
+	},
+    },
+    "hApp": {
+	"path": "happ/:id",
+	async read ({ id }) {
+	    assert_holohash( id, "EntryHash" );
+
+	    try {
+		return await devhub.call("happs", "happ_library", "get_happ", { id });
+	    } catch (err) {
+		if ( err.name === "DeserializationError"
+		     && err.message.includes("Failed to deserialize to entry type") )
+		    throw new TypeError(`Entry ${id} is not the correct entry type; make sure the hash belongs to a hApp entry`);
+		else
+		    throw err;
+	    }
+	},
+	defaultMutable () {
+	    return {
+		"title": "",
+		"subtitle": "",
+		"description": "",
+		"tags": [],
+	    };
+	},
+	async create ( input ) {
+	    const happ			= await devhub.call("happs", "happ_library", "create_happ", input );
+
+	    this.openstate.state[`happ/${happ.$id}`] = happ;
+
+	    return happ;
+	},
+	toMutable ({ title, subtitle, description, tags }) {
+	    return {
+		title,
+		subtitle,
+		description,
+		tags,
+	    };
+	},
+	async update ({ id }, changed, intent ) {
+	    if ( intent === "deprecation" ) {
+		return await devhub.call("happs", "happ_library", "deprecate_happ", {
+		    "addr": this.state.$action,
+		    "message": changed.deprecation,
+		});
+	    }
+
+	    console.log("Update:", id, changed );
+	    return await devhub.call("happs", "happ_library", "update_happ", {
+		"addr": this.state.$action,
+		"properties": changed,
+	    });
+	},
+	"permissions": {
+	    async writable ( happ ) {
+		if ( happ.deprecation )
+		    return false;
+
+		const agent_info	= await this.get("agent/me");
+		return common.hashesAreEqual( happ.designer, agent_info.pubkey.initial );
+	    },
+	},
+	validation ( data, rejections, intent ) {
+	    const hr_names		= {
+		"title": "hApp Title",
+		"subtitle": "hApp Subtitle",
+		"display_name": "Display Name",
+		"description": "hApp Description",
+	    };
+
+	    if ( intent === "deprecation" ) {
+		console.log("Validate deprecation input", data );
+		if ( data.deprecation === undefined )
+		    rejections.push(`'Deprecation Reason' is required`);
+		else if ( typeof data.deprecation !== "string")
+		    rejections.push(`'Deprecation Reason' must be a string`);
+		else if ( data.deprecation.trim() === "" )
+		    rejections.push(`'Deprecation Reason' cannot be blank`);
+		return;
+	    }
+
+	    ["title", "subtitle", "description"].forEach( key => {
+		if ( [null, undefined].includes( data[key] ) )
+		    rejections.push(`'${hr_names[key]}' is required`);
+	    });
+
+	    ["title", "subtitle"].forEach( key => {
+		if ( common.isEmpty( data[key] ) )
+		    rejections.push(`'${hr_names[key]}' cannot be blank`);
+	    });
+	},
+    },
+    "Releases for hApp": {
+	"path": "happ/:id/releases",
+	"readonly": true,
+	async read ({ id }) {
+	    assert_holohash( id, "EntryHash" );
+
+	    const list		= await devhub.call("happs", "happ_library", "get_happ_releases", {
+		"for_happ": id,
+	    });
+
+	    return list;
+	},
+    },
+    "Latest Release for hApp": {
+	"path": "happ/:id/releases/latest",
+	"readonly": true,
+	async read ({ id }) {
+	    const releases		= await this.openstate.read(`happ/${id}/releases`);
+
+	    return releases.reduce( (acc, release, i) => {
+		if ( acc === null )
+		    return release;
+
+		if ( release.release > acc.release )
+		    return release;
+
+		return acc;
+	    }, null );
+	},
+    },
+    "GUI": {
+	"path": "gui/:id",
+	async read ({ id }) {
+	    assert_holohash( id, "EntryHash" );
+
+	    try {
+		return await devhub.call("happs", "happ_library", "get_gui", { id });
+	    } catch (err) {
+		if ( err.name === "DeserializationError"
+		     && err.message.includes("Failed to deserialize to entry type") )
+		    throw new TypeError(`Entry ${id} is not the correct entry type; make sure the hash belongs to a GUI entry`);
+		else
+		    throw err;
+	    }
+	},
+	adapter ( entity ) {
+	    entity.designer		= new AgentPubKey( entity.designer );
+	},
+	defaultMutable () {
+	    return {
+		"name": "",
+		"description": "",
+		"tags": [],
+	    };
+	},
+	toMutable ({ name, description, holo_hosting_settings, tags, screenshots, metadata }) {
+	    return {
+		name,
+		description,
+		holo_hosting_settings,
+		tags,
+		screenshots,
+		metadata,
+	    };
+	},
+	async create ( input ) {
+	    const gui			= await devhub.call("happs", "happ_library", "create_gui", input );
+
+	    this.openstate.state[`gui/${gui.$id}`] = gui;
+
+	    return gui;
+	},
+	async update ({ id }, changed, intent ) {
+	    if ( intent === "deprecation" ) {
+		return await devhub.call("happs", "happ_library", "deprecate_gui", {
+		    "addr": this.state.$action,
+		    "message": changed.deprecation,
+		});
+	    }
+
+	    return await devhub.call("happs", "happ_library", "update_gui", {
+		"addr": this.state.$action,
+		"properties": changed,
+	    });
+	},
+	"permissions": {
+	    async writable ( gui ) {
+		if ( gui.deprecation )
+		    return false;
+
+		const agent_info	= await this.get("agent/me");
+		return common.hashesAreEqual( gui.designer, agent_info.pubkey.initial );
+	    },
+	},
+	validation ( data, rejections, intent ) {
+	    const hr_names		= {
+		"name": "GUI Name",
+		"description": "GUI Description",
+	    };
+
+	    if ( intent === "deprecation" ) {
+		console.log("Validate deprecation input", data );
+		if ( data.deprecation === undefined )
+		    rejections.push(`'Deprecation Reason' is required`);
+		else if ( typeof data.deprecation !== "string")
+		    rejections.push(`'Deprecation Reason' must be a string`);
+		else if ( data.deprecation.trim() === "" )
+		    rejections.push(`'Deprecation Reason' cannot be blank`);
+
+		return;
+	    }
+
+	    ["name", "description"].forEach( key => {
+		if ( [null, undefined].includes( data[key] ) )
+		    rejections.push(`'${hr_names[key]}' is required`);
+	    });
+
+	    ["name"].forEach( key => {
+		if ( common.isEmpty( data[key] ) )
+		    rejections.push(`'${hr_names[key]}' cannot be blank`);
+	    });
+	},
+    },
+    "Releases for GUI": {
+	"path": "gui/:id/releases",
+	"readonly": true,
+	async read ({ id }) {
+	    assert_holohash( id, "EntryHash" );
+
+	    const list		= await devhub.call("happs", "happ_library", "get_gui_releases", {
+		"for_gui": id,
+	    });
+
+	    return list;
+	},
+    },
+    "Latest Release for GUI": {
+	"path": "gui/:id/releases/latest",
+	"readonly": true,
+	async read ({ id }) {
+	    const releases		= await this.openstate.read(`gui/${id}/releases`);
+
+	    return releases.reduce( (acc, release, i) => {
+		if ( acc === null )
+		    return release;
+
+		if ( release.release > acc.release )
+		    return release;
+
+		return acc;
+	    }, null );
 	},
     },
 });

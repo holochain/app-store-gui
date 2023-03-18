@@ -1,4 +1,5 @@
-<div v-if="app">
+<div v-if="app"
+     :class="{ 'was-validated': $app.failed }">
     <identicon-container :seed="id"
 			 id="banner"
 			 class="mb-5 d-flex flex-column-reverse align-items-center exhibit"
@@ -30,7 +31,7 @@
 
 	<div class="data-box my-2">
 	    <label class="form-label">App Name</label>
-	    <input class="form-control" v-model="app$.name">
+	    <input class="form-control" v-model="app$.name" required>
 	</div>
 
 	<div class="data-box my-2">
@@ -50,22 +51,77 @@
 	</div>
 
 
-	<h5 class="mt-4">DevHub Address</h5>
+	<h5 class="mt-4">DevHub Assets</h5>
 
-	<div class="data-box my-2">
-	    <label class="form-label">DNA</label>
-	    <input class="form-control" v-model="app$.devhub_address.dna">
+	<div v-if="app$.devhub_address.happ" class="card entity-ref happ-ref my-2">
+	    <a class="position-absolute top-0 end-0 m-1" @click="app$.devhub_address.happ = null">
+		<i class="bi-x-lg"></i>
+	    </a>
+
+	    <div v-if="happ" class="d-flex align-items-center">
+		<p class="col">
+		    <span class="fw-bold">{{ happ.title }}:</span>
+		    {{ happ.subtitle }}<br>
+		    <span class="fw-light">{{ happ.description || 'No description' }}</span>
+		    <br><br>
+		    <i>Latest Release: {{ happ_release?.name }}</i>
+		</p>
+		<identicon-img :seed="app$.devhub_address.happ" size="50"></identicon-img>
+	    </div>
+	    <div v-else-if="happ_errors.read" class="text-danger py-1">
+		{{ happ_errors.read.message }}
+	    </div>
+	    <div v-else-if="app$.devhub_address.happ" class="text-center mb-1">
+		<div class="spinner-border"></div>
+	    </div>
+	    <div v-else class="text-center pb-2">
+		Waiting for hApp ID...
+	    </div>
 	</div>
-
-	<div class="data-box my-2">
+	<div v-else class="data-box my-2">
 	    <label class="form-label">hApp</label>
-	    <input class="form-control" v-model="app$.devhub_address.happ">
+	    <input class="form-control" @change="setDevHubHapp( $event.target.value )"
+		   placeholder="Entry Hash" required>
 	</div>
 
-	<div class="data-box my-2">
-	    <label class="form-label">GUI</label>
-	    <input class="form-control" v-model="app$.devhub_address.gui">
+	<div v-if="!app$.devhub_address.gui">
+	    <input type="checkbox" v-model="use_official_gui"> Use hApp's Official GUI
 	</div>
+
+	<template v-if="!use_official_gui">
+	    <div v-if="app$.devhub_address.gui" class="card entity-ref gui-ref my-2">
+		<a class="position-absolute top-0 end-0 m-1"
+		   @click="app$.devhub_address.gui = null">
+		    <i class="bi-x-lg"></i>
+		</a>
+
+		<div v-if="gui" class="d-flex align-items-center">
+		    <p class="col">
+			<span class="fw-bold">{{ gui.name }}</span><br>
+			<span class="fw-light">{{ gui.description || 'No description' }}</span>
+			<br><br>
+			<i>Latest Release: v{{ gui_release?.version }}</i>
+		    </p>
+		    <identicon-img :seed="app$.devhub_address.gui" size="50"></identicon-img>
+		</div>
+		<div v-else-if="gui_errors.read" class="text-danger py-1">
+		    {{ gui_errors.read.message }}
+		</div>
+		<div v-else-if="app$.devhub_address.gui" class="text-center mb-1">
+		    <div class="spinner-border" role="status">
+			<span class="visually-hidden">Loading...</span>
+		    </div>
+		</div>
+		<div v-else class="text-center pb-2">
+		    Waiting for hApp ID...
+		</div>
+	    </div>
+	    <div v-else class="data-box my-2">
+		<label class="form-label">GUI</label>
+		<input class="form-control" @change="setDevHubGUI( $event.target.value )"
+		       placeholder="Entry Hash" required>
+	    </div>
+	</template>
     </div>
 
     <div class="container my-4">
@@ -76,7 +132,7 @@
 	<div v-for="agent in app.editors"
 	     class="data-box my-2 d-flex align-items-center gutters gx-2">
 	    <label>{{ agent }}</label>
-	    <identicon-img :seed="agent" size="50"></identicon-img>
+	    <identicon-img :seed="agent" color size="50"></identicon-img>
 	</div>
     </div>
 
@@ -93,18 +149,4 @@
 	    </a>
 	</div>
     </div>
-
-    <notification-bar v-if="$app.failed && actionErrors().length" class="text-danger p-2">
-	<i class="bi-exclamation-triangle-fill"></i>
-	Action Error
-
-	<div slot="details" class="pt-2">
-	    <ul class="list-unstyled text-start d-inline-block">
-		<li v-for="msg in actionErrors()">
-		    <pre v-if="msg.includes('\n')" style="max-width: 100%; overflow-x: auto;">{{ msg }}</pre>
-		    <span v-else>{{ msg }}</span>
-		</li>
-	    </ul>
-	</div>
-    </notification-bar>
 </div>

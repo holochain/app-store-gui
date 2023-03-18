@@ -44,20 +44,44 @@
 	    </div>
 	</router-link>
 
-	<h6 class="mt-3">DevHub Address</h6>
+	<h6 class="mt-3">DevHub Assets</h6>
 
 	<div class="data-box my-2">
 	    <label>DNA</label>
 	    <p>{{ app.devhub_address.dna }}</p>
 	</div>
-	<div class="data-box my-2">
-	    <label>hApp</label>
-	    <p>{{ app.devhub_address.happ }}</p>
+
+	<div class="card entity-ref happ-ref my-2">
+	    <div v-if="happ"
+		 class="d-flex align-items-center">
+		<p class="col">
+		    <span class="fw-bold">{{ happ.title }}:</span>
+		    {{ happ.subtitle }}<br>
+		    <span class="fw-light">{{ happ.description || 'No description' }}</span>
+		</p>
+		<identicon-img :seed="app.devhub_address.happ" size="50"></identicon-img>
+	    </div>
+	    <div v-else class="text-center">
+		<div class="spinner-border mt-1" role="status">
+		    <span class="visually-hidden">Loading...</span>
+		</div>
+	    </div>
 	</div>
-	<div v-if="app.devhub_address.gui"
-	     class="data-box my-2">
-	    <label>GUI</label>
-	    <p>{{ app.devhub_address.gui }}</p>
+
+	<div class="card entity-ref gui-ref my-2">
+	    <div v-if="gui"
+		 class="d-flex align-items-center">
+		<p class="col">
+		    <span class="fw-bold">{{ gui.name }}</span><br>
+		    <span class="fw-light">{{ gui.description || 'No description' }}</span>
+		</p>
+		<identicon-img :seed="app.devhub_address.gui" size="50"></identicon-img>
+	    </div>
+	    <div v-else class="text-center">
+		<div class="spinner-border mt-1" role="status">
+		    <span class="visually-hidden">Loading...</span>
+		</div>
+	    </div>
 	</div>
     </div>
 
@@ -69,7 +93,7 @@
 	<div v-for="agent in app.editors"
 	     class="data-box my-2 d-flex align-items-center gutters gx-2">
 	    <label>{{ agent }}</label>
-	    <identicon-img :seed="agent" size="50"></identicon-img>
+	    <identicon-img :seed="agent" color size="50"></identicon-img>
 	</div>
     </div>
 </div>

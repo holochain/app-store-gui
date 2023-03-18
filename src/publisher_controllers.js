@@ -5,7 +5,7 @@ const common				= require('./common.js');
 const countries				= require('./countries.js');
 
 
-module.exports = async function ( [appstore] ) {
+module.exports = async function () {
 
     async function create () {
 	return {

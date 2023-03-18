@@ -1,5 +1,6 @@
 
 class IdenticonImg extends LitElement {
+    static DEFAULT_COLOR		= false;
     static DEFAULT_SIZE			= 25;
 
     static get properties () {
@@ -9,6 +10,10 @@ class IdenticonImg extends LitElement {
 		"reflect": true,
 	    },
 	    "size": {
+		"reflect": true,
+	    },
+	    "color": {
+		"type": Boolean,
 		"reflect": true,
 	    },
 	};
@@ -23,6 +28,7 @@ class IdenticonImg extends LitElement {
     constructor () {
 	super();
 
+	this.color			= this.constructor.DEFAULT_COLOR;
 	this.size			= this.constructor.DEFAULT_SIZE;
     }
 
@@ -32,11 +38,11 @@ class IdenticonImg extends LitElement {
 
 	const size			= parseInt( this.size );
 	const identicon			= Identicons.renderDiscs({
-	    "seed": this.seed,
+	    "seed": String(this.seed),
 	    "width": size,
 	    "height": size,
 	    "colorRange": 15,
-	    "grayscale": false,
+	    "grayscale": this.color !== true,
 	});
 
 	const dynamic_css		= unsafeCSS(`

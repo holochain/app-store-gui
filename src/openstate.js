@@ -35,8 +35,25 @@ module.exports = async function ([ appstore ]) {
 	},
     });
 
+    const devhub			= {
+	async call ( dna, zome, func, payload, timeout ) {
+	    const available_host	= await openstate.get(`devhub/hosts/${dna}/${zome}/${func}/any`);
+	    const dna_hash		= await openstate.get(`dna/alias/${dna}`);
+	    const call_details		= {
+		"dna": dna_hash,
+		"zome": zome,
+		"function": func,
+		"payload": payload,
+	    };
+	    return await appstore.call("portal", "portal_api", "custom_remote_call", {
+		"host": available_host.author,
+		"call": call_details,
+	    }, timeout );
+	}
+    };
+
     openstate.addHandlers({
-	...appstore_config( appstore ),
+	...appstore_config( appstore, devhub ),
     });
 
     return openstate;

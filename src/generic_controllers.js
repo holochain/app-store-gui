@@ -4,7 +4,7 @@ const log				= new Logger("generic");
 const common				= require('./common.js');
 
 
-module.exports = async function ( [appstore] ) {
+module.exports = async function () {
 
     async function main () {
 	return {

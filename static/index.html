@@ -46,7 +46,7 @@
 	     #################### -->
 
 	<!-- Libraries -->
-	<script src="dependencies/identicons.bundled.js"></script>
+	<script src="/dependencies/identicons.bundled.js"></script>
 
 	<script src="/dependencies/vue.js"></script>
 	<script src="/dependencies/vuex.js"></script>
@@ -69,6 +69,8 @@
 	<link rel="stylesheet" href="css/bootstrap-theme.css">
 	<!-- Font -->
 	<link rel="stylesheet" href="googlefonts/mulish.css">
+	<!-- Custom CSS -->
+	<link rel="stylesheet" href="css/devhub.css">
     </head>
     <body>
 	<div id="app">
@@ -90,7 +92,7 @@
 			    <router-link to="/profile">
 				<identicon-img v-cloak v-if="agent"
 					       :seed="agent?.pubkey.initial"
-					       size="50"></identicon-img>
+					       color size="50"></identicon-img>
 			    </router-link>
 			    <i class="bi-caret-down-fill"></i>
 			</div>

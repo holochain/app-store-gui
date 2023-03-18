@@ -76,7 +76,7 @@
 
 	<div class="data-box my-2 d-flex align-items-center gutters gx-2">
 	    <label>{{ $root.agent?.pubkey.initial }}</label>
-	    <identicon-img :seed="$root.agent?.pubkey.initial" size="50"></identicon-img>
+	    <identicon-img :seed="$root.agent?.pubkey.initial" color size="50"></identicon-img>
 	</div>
 
 	<div v-for="(agent, i) in publisher$.editors"

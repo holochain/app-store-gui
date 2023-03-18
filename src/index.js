@@ -35,9 +35,9 @@ if ( isNaN( APP_PORT ) )
 (async function(global) {
     const [appstore]			= await client_init( CONDUCTOR_URI );
     const openstate			= await openstate_init([ appstore ]);
-    const generic_controllers		= await generics_init( [appstore] );
-    const publisher_controllers		= await publishers_init( [appstore] );
-    const app_controllers		= await apps_init( [appstore] );
+    const generic_controllers		= await generics_init();
+    const publisher_controllers		= await publishers_init();
+    const app_controllers		= await apps_init();
 
     window.appstore_client		= appstore;
     window.openstate			= openstate;

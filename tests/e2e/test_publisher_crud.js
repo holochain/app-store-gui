@@ -145,7 +145,6 @@ describe("Openstate: Publisher", () => {
 
 	actors			= await holochain.backdrop({
 	    "appstore":	APPSTORE_PATH,
-	    "devhub":	DEVHUB_PATH,
 	});
 
 	for ( let name in actors ) {
@@ -155,7 +154,7 @@ describe("Openstate: Publisher", () => {
 	    }
 	}
 
-	openstate		= await openstate_init([ actors.alice.appstore.client, actors.alice.devhub.client ]);
+	openstate		= await openstate_init([ actors.alice.appstore.client ]);
     });
 
     after(async () => {
