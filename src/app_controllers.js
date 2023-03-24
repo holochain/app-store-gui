@@ -117,30 +117,51 @@ module.exports = async function () {
 		    await this.$openstate.read( this.datapath );
 		});
 
-		this.$openstate.read( this.happ_datapath );
-		this.$openstate.read( this.gui_datapath );
+		this.readDevHubHapp();
+		if ( this.app.devhub_address.gui )
+		    this.readDevHubGUI();
 	    },
 	    "computed": {
 		happ_datapath () {
-		    return this.app
+		    return this.app?.devhub_address.happ
 			? `happ/${this.app.devhub_address.happ}`
 			: this.$openstate.DEADEND;
 		},
+		happ_release_datapath () {
+		    return this.app?.devhub_address.happ
+			? `happ/${this.app$.devhub_address.happ}/releases/latest`
+			: this.$openstate.DEADEND;
+		},
 		gui_datapath () {
-		    return this.app
+		    return this.app?.devhub_address.gui
 			? `gui/${this.app.devhub_address.gui}`
+			: this.$openstate.DEADEND;
+		},
+		gui_release_datapath () {
+		    return this.app?.devhub_address.gui
+			? `gui/${this.app$.devhub_address.gui}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		...common.scopedPathComputed( c => c.datapath, "app" ),
 		...common.scopedPathComputed( c => c.publisher_datapath, "publisher" ),
 		...common.scopedPathComputed( c => c.package_datapath, "package" ),
 		...common.scopedPathComputed( c => c.happ_datapath, "happ" ),
+		...common.scopedPathComputed( c => c.happ_release_datapath, "happ_release" ),
 		...common.scopedPathComputed( c => c.gui_datapath, "gui" ),
+		...common.scopedPathComputed( c => c.gui_release_datapath, "gui_release" ),
 	    },
 	    "methods": {
 		refresh () {
 		    this.$openstate.read( this.datapath );
 		    this.$openstate.read( this.publisher_datapath );
+		},
+		async readDevHubHapp () {
+		    await this.$openstate.read( this.happ_datapath );
+		    await this.$openstate.read( this.happ_release_datapath );
+		},
+		async readDevHubGUI () {
+		    await this.$openstate.read( this.gui_datapath );
+		    await this.$openstate.read( this.gui_release_datapath );
 		},
 		async downloadApp () {
 		    if ( this.$package.reading )
@@ -206,7 +227,8 @@ module.exports = async function () {
 		});
 
 		this.readDevHubHapp();
-		this.readDevHubGUI();
+		if ( this.app$.devhub_address.gui )
+		    this.readDevHubGUI();
 
 		this.app$.devhub_address.dna	= await this.$openstate.get(`dna/alias/happs`);
 	    },

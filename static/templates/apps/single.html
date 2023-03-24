@@ -46,11 +46,6 @@
 
 	<h6 class="mt-3">DevHub Assets</h6>
 
-	<div class="data-box my-2">
-	    <label>DNA</label>
-	    <p>{{ app.devhub_address.dna }}</p>
-	</div>
-
 	<div class="card entity-ref happ-ref my-2">
 	    <div v-if="happ"
 		 class="d-flex align-items-center">
@@ -58,6 +53,8 @@
 		    <span class="fw-bold">{{ happ.title }}:</span>
 		    {{ happ.subtitle }}<br>
 		    <span class="fw-light">{{ happ.description || 'No description' }}</span>
+		    <br><br>
+		    <i>Latest Release: {{ happ_release?.name }}</i>
 		</p>
 		<identicon-img :seed="app.devhub_address.happ" size="50"></identicon-img>
 	    </div>
@@ -68,12 +65,14 @@
 	    </div>
 	</div>
 
-	<div class="card entity-ref gui-ref my-2">
+	<div v-if="app.devhub_address.gui" class="card entity-ref gui-ref my-2">
 	    <div v-if="gui"
 		 class="d-flex align-items-center">
 		<p class="col">
 		    <span class="fw-bold">{{ gui.name }}</span><br>
 		    <span class="fw-light">{{ gui.description || 'No description' }}</span>
+		    <br><br>
+		    <i>Latest Release: v{{ gui_release?.version }}</i>
 		</p>
 		<identicon-img :seed="app.devhub_address.gui" size="50"></identicon-img>
 	    </div>

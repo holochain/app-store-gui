@@ -7,9 +7,8 @@ const { AgentClient }			= HolochainClient;
 const { CruxConfig,
 	Translator }			= CruxPayloadParser;
 
-const APP_ID				= localStorage.getItem("APP_ID") || "app-store";
 
-module.exports = async function ( CONDUCTOR_URI ) {
+module.exports = async function ( CONDUCTOR_URI, APP_ID ) {
     const { AgentClient }		= await HolochainClient;
     const crux_config			= new CruxConfig();
     const interpreter			= new Translator([]);

@@ -1,10 +1,11 @@
 
-SHELL		= bash
-PROJECT_NAME	= appstore
+SHELL			= bash
+PROJECT_NAME		= appstore
 
-APPSTORE_HAPP	= tests/appstore.happ
-DEVHUB_HAPP	= tests/devhub.happ
-HAPPS		= $(APPSTORE_HAPP) $(DEVHUB_HAPP)
+APPSTORE_WEBHAPP	= appstore.webhapp
+APPSTORE_HAPP		= tests/appstore.happ
+DEVHUB_HAPP		= tests/devhub.happ
+HAPPS			= $(APPSTORE_HAPP) $(DEVHUB_HAPP)
 
 
 #
@@ -35,6 +36,8 @@ copy-appstore-from-local:
 #
 # Testing
 #
+build:			static-links
+	npx webpack
 build-watch:		static-links
 	WEBPACK_MODE=development npx webpack --watch
 
@@ -71,7 +74,7 @@ node_modules:		package-lock.json
 	touch $@
 dist:				static-links static/dist/webpacked.app.js
 static/dist/webpacked.app.js:	node_modules webpack.config.js Makefile
-	npm run build
+	make build
 	touch $@
 static-links:\
 	static/dependencies\
@@ -144,6 +147,12 @@ use-local-openstate:
 use-npm-openstate:
 	npm uninstall openstate
 	npm install --save openstate
+$(APPSTORE_WEBHAPP):		web_assets.zip tests/appstore.happ
+	hc web pack -o $@ ./bundled
+	cp $@ ~/
+web_assets.zip:			Makefile static/* static/*/*
+	make build
+	cd static; zip -r ../web_assets.zip ./*
 
 
 #

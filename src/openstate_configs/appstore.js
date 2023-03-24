@@ -15,12 +15,21 @@ function assert_holohash ( input, type ) {
 	throw new TypeError(`Wrong HoloHash type '${hash.constructor.name}'; expected '${type}'`);
 }
 
+const DNA_ALIAS_MAP			= {
+    "dnarepo":	localStorage.getItem("DNAREPO_DNA_HASH")	|| "uhC0k-kJ9Pby_BZulezgTO8aiWDtbYW4HIx16sORULFd_Y2hlcATb",
+    "happs":	localStorage.getItem("HAPPS_DNA_HASH")		|| "uhC0kXms4EuHzdmA9veWo04hq2J5_W48Q8XHDdFMgNalH5LXHfBJc",
+};
+
 module.exports				= (appstore, devhub) => ({
     "DNA Alias": {
 	"path": "dna/alias/:alias",
 	"readonly": true,
 	async read ({ alias }) {
-	    return new DnaHash( await appstore.call("appstore", "appstore_api", "get_dna_hash", alias ) );
+	    if ( !(alias in DNA_ALIAS_MAP) )
+		throw new Error(`Unknown alias '${alias}'"`);
+
+	    return new DnaHash( DNA_ALIAS_MAP[ alias ] );
+	    // return new DnaHash( await appstore.call("appstore", "appstore_api", "get_dna_hash", alias ) );
 	},
     },
     "Agent": {
@@ -331,7 +340,10 @@ module.exports				= (appstore, devhub) => ({
 	"path": "devhub/hosts/:dna",
 	"readonly": true,
 	async read ({ dna }) {
-	    const list				= await appstore.call("appstore", "appstore_api", "get_registered_hosts", dna );
+	    const dna_hash			= await openstate.read(`dna/alias/${dna}`);
+	    const list				= await appstore.call("portal", "portal_api", "get_registered_hosts", {
+		"dna": dna_hash,
+	    });
 
 	    for ( let host of list ) {
 		const path			= `portal/host/${host.$id}`;
@@ -345,8 +357,9 @@ module.exports				= (appstore, devhub) => ({
 	"path": "devhub/hosts/:dna/:zome/:func",
 	"readonly": true,
 	async read ({ dna, zome, func }) {
-	    const list				= await appstore.call("appstore", "appstore_api", "get_hosts_for_zome_function", {
-		"dna": dna,
+	    const dna_hash			= await openstate.read(`dna/alias/${dna}`);
+	    const list				= await appstore.call("portal", "portal_api", "get_hosts_for_zome_function", {
+		"dna": dna_hash,
 		"zome": zome,
 		"function": func,
 	    });
@@ -424,25 +437,30 @@ module.exports				= (appstore, devhub) => ({
 	    if ( !(app.devhub_address.gui || latest_happ_release.official_gui) )
 		throw new Error(`No Official GUI for hApp Release '${latest_happ_release.name}' (${latest_happ_release.$id})`);
 
-	    const gui_id			= app.devhub_address.gui || latest_happ_release.official_gui;
-	    const gui_releases			= await devhub.call( "happs", "happ_library", "get_gui_releases", {
-		"for_gui": gui_id,
-	    }, 10_000 );
-
-	    if ( gui_releases.length === 0 ) {
-		const gui			= await devhub.call( "happs", "happ_library", "get_gui", {
-		    "id": gui_id,
+	    let gui_release_id;
+	    if ( app.devhub_address.gui ) {
+		const gui_releases		= await devhub.call( "happs", "happ_library", "get_gui_releases", {
+		    "for_gui": app.devhub_address.gui,
 		}, 10_000 );
 
-		throw new Error(`There are no releases for GUI '${gui.name}' (${gui.$id})`);
-	    }
+		if ( gui_releases.length === 0 ) {
+		    const gui			= await devhub.call( "happs", "happ_library", "get_gui", {
+			"id": gui_id,
+		    }, 10_000 );
 
-	    const latest_gui_release		= gui_releases[0];
+		    throw new Error(`There are no releases for GUI '${gui.name}' (${gui.$id})`);
+		}
+
+		gui_release_id			= gui_releases[0].$id;
+	    }
+	    else {
+		gui_release_id			= latest_happ_release.official_gui;
+	    }
 
 	    const bytes				= await devhub.call( "happs", "happ_library", "get_webhapp_package", {
 		"name": app.name,
 		"happ_release_id": latest_happ_release.$id,
-		"gui_release_id": latest_gui_release.$id,
+		"gui_release_id": gui_release_id,
 	    }, 60_000 );
 
 	    return new Uint8Array( bytes );

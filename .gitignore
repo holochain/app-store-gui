@@ -6,3 +6,5 @@ tests/*.happ
 static/dist
 static/dependencies
 static/web-components/purewc-*
+appstore.webhapp
+*.zip

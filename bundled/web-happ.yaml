@@ -1,0 +1,7 @@
+---
+manifest_version: "1"
+name: App Store
+ui:
+  bundled: "../web_assets.zip"
+happ_manifest:
+  bundled: "../tests/appstore.happ"

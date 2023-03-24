@@ -2,6 +2,7 @@ const { Logger }			= require('@whi/weblogger');
 const log				= new Logger("main");
 
 const json				= require('@whi/json');
+const { invoke }			= require('@tauri-apps/api/tauri');
 const { EntityArchitect,
 	...crux }			= CruxPayloadParser;
 const { AgentPubKey }			= holohash;
@@ -27,13 +28,63 @@ const PORT_VALUE			= localStorage.getItem("APP_PORT");
 const APP_PORT				= parseInt( PORT_VALUE ) || 44001;
 const APP_HOST				= HOST_VALUE || "127.0.0.1";
 const CONDUCTOR_URI			= `${APP_HOST}:${APP_PORT}`;
+const APP_ID				= localStorage.getItem("APP_ID") || "app-store";
+
 
 if ( isNaN( APP_PORT ) )
     throw new Error(`Invalid 'APP_PORT' (${PORT_VALUE}); run 'localStorage.setItem( "APP_PORT", "<port number>" );`);
 
 
+async function setup_clients() {
+    try {
+	const launcher_config		= window.__HC_LAUNCHER_ENV__;
+
+	if ( !launcher_config )
+	    throw new TypeError(`No launcher config @ window.__HC_LAUNCHER_ENV__`);
+
+	const [appstore]		= await client_init(
+	    `${APP_HOST}:${launcher_config.APP_INTERFACE_PORT}`,
+	    launcher_config.INSTALLED_APP_ID
+	);
+
+	appstore.setSigningHandler( async zomeCallUnsigned => {
+	    zomeCallUnsigned.provenance	= Array.from( zomeCallUnsigned.provenance );
+	    zomeCallUnsigned.cell_id	= [
+		Array.from( zomeCallUnsigned.cell_id[0] ),
+		Array.from( zomeCallUnsigned.cell_id[1] ),
+	    ];
+	    zomeCallUnsigned.payload	= Array.from( zomeCallUnsigned.payload );
+	    zomeCallUnsigned.nonce	= Array.from( zomeCallUnsigned.nonce );
+
+	    const signedZomeCall	= await invoke("sign_zome_call", {
+		zomeCallUnsigned,
+	    });
+
+	    signedZomeCall.cap_secret	= null;
+	    signedZomeCall.provenance	= Uint8Array.from( signedZomeCall.provenance );
+	    signedZomeCall.cell_id	= [
+		Uint8Array.from( signedZomeCall.cell_id[0] ),
+		Uint8Array.from( signedZomeCall.cell_id[1] ),
+	    ];
+	    signedZomeCall.payload	= Uint8Array.from( signedZomeCall.payload );
+	    signedZomeCall.signature	= Uint8Array.from( signedZomeCall.signature || [] );
+	    signedZomeCall.nonce	= Uint8Array.from( signedZomeCall.nonce );
+
+	    log.trace("Signed request input:", signedZomeCall );
+	    return signedZomeCall;
+	});
+
+	return [appstore];
+    } catch (err) {
+	log.warn("Using hard-coded configuration because launcher config produced error: %s", err.toString() );
+    }
+
+    return await client_init( CONDUCTOR_URI, APP_ID );
+}
+
+
 (async function(global) {
-    const [appstore]			= await client_init( CONDUCTOR_URI );
+    const [appstore]			= await setup_clients();
     const openstate			= await openstate_init([ appstore ]);
     const generic_controllers		= await generics_init();
     const publisher_controllers		= await publishers_init();

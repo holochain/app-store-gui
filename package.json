@@ -22,7 +22,7 @@
     "@whi/crux-payload-parser": "^0.3.1",
     "@whi/holo-hash": "^0.3.0",
     "@whi/holochain-backdrop": "^1.0.3",
-    "@whi/holochain-client": "^0.80.1",
+    "@whi/holochain-client": "^0.81.0",
     "@whi/identicons": "^0.1.1",
     "@whi/weblogger": "^0.1.5",
     "openstate": "^0.2.2",
@@ -43,7 +43,7 @@
     "chai": "^4.3.7",
     "copy-webpack-plugin": "^11.0.0",
     "mocha": "^10.2.0",
-    "webpack": "^5.75.0",
+    "webpack": "^5.76.3",
     "webpack-cli": "^5.0.1",
     "ws": "^8.11.0"
   }
