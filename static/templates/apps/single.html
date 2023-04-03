@@ -1,6 +1,6 @@
 <div v-if="app">
     <layout-banner :seed="id" class="pb-5">
-	<h2 id="page-title">{{ app.name }}</h2>
+	<h2 id="page-title">{{ app.title }}: {{ app.subtitle }}</h2>
 	<span id="page-subtitle">
 	    <strong>{{ app.description }}</strong>
 	    <span class="fw-light"></span>
@@ -11,7 +11,8 @@
 	</div>
 
 	<div slot="actions">
-	    <router-link :to="'/apps/' + id + '/update'">
+	    <router-link v-if="$app.writable"
+			 :to="'/apps/' + id + '/update'">
 		<a-icon class="btn-primary">
 		    <i class="bi-pencil"></i>
 		</a-icon>

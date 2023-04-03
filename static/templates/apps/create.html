@@ -20,8 +20,13 @@
 	<h4>Details</h4>
 
 	<div class="data-box my-2">
-	    <label class="form-label">App Name</label>
-	    <input class="form-control" v-model="app$.name" required>
+	    <label class="form-label">App Title</label>
+	    <input class="form-control" v-model="app$.title" required>
+	</div>
+
+	<div class="data-box my-2">
+	    <label class="form-label">App Subtitle</label>
+	    <input class="form-control" v-model="app$.subtitle" required>
 	</div>
 
 	<div class="data-box my-2">
@@ -54,7 +59,7 @@
 		    {{ happ.subtitle }}<br>
 		    <span class="fw-light">{{ happ.description || 'No description' }}</span>
 		    <br><br>
-		    <i>Latest Release: {{ happ_release?.name }}</i>
+		    <i>Latest Release: {{ happ_release?.version }}</i>
 		</p>
 		<identicon-img :seed="app$.devhub_address.happ" size="50"></identicon-img>
 	    </div>

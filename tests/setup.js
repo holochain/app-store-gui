@@ -108,29 +108,6 @@ function print ( msg, ...args ) {
 	    const filename		= path.resolve( __dirname, `DNA_${role_name.toUpperCase()}` );
 	    fs.writeFileSync( filename, `${dna_hash}\n` );
 	}
-
-	if ( APP_PREFIX === "devhub" ) {
-	    print("Registering %s as a portal host of DevHub's happ_library", AGENT_NICKNAME );
-	    const client			= await AgentClient.createFromAppInfo( APP_ID, APP_PORT );
-	    try {
-		await client.call("portal", "portal_api", "register_host", {
-		    "dna": client._app_schema._dnas.happs._hash,
-		    "granted_functions": {
-			"Listed": [
-			    [ "happ_library", "get_webhapp_package" ],
-			    [ "happ_library", "get_happ" ],
-			    [ "happ_library", "get_happ_release" ],
-			    [ "happ_library", "get_happ_releases" ],
-			    [ "happ_library", "get_gui" ],
-			    [ "happ_library", "get_gui_release" ],
-			    [ "happ_library", "get_gui_releases" ],
-			],
-		    },
-		});
-	    } finally {
-		await client.close();
-	    }
-	}
     } catch (err) {
 	console.log("Setup exiting in failure:");
 	console.error( err );

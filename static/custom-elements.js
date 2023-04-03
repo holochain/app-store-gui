@@ -1,3 +1,22 @@
+function fallbackCopyTextToClipboard ( text ) {
+    let textArea			= document.createElement("textarea");
+    textArea.value			= text;
+
+    textArea.style.bottom		= "0";
+    textArea.style.right		= "0";
+    textArea.style.position		= "fixed";
+
+    document.body.appendChild( textArea );
+    textArea.focus();
+    textArea.select();
+
+    try {
+	if ( !document.execCommand('copy') )
+	    throw new Error(`Unable to copy to clipboard`);
+    } finally {
+	document.body.removeChild( textArea );
+    }
+}
 
 class IdenticonImg extends LitElement {
     static DEFAULT_COLOR		= false;
@@ -32,6 +51,13 @@ class IdenticonImg extends LitElement {
 	this.size			= this.constructor.DEFAULT_SIZE;
     }
 
+    async copyToClipboard () {
+	if ( !navigator.clipboard )
+	    return fallbackCopyTextToClipboard( String(this.seed) );
+
+	await navigator.clipboard.writeText( String(this.seed) );
+    }
+
     render () {
 	this.style.width		= this.size + "px";
 	this.style.height		= this.size + "px";
@@ -55,7 +81,7 @@ class IdenticonImg extends LitElement {
 	return html`
 <style>${dynamic_css}</style>
 
-<img class="identicon" title=${this.seed} src=${identicon.dataURL}>
+<img class="identicon" title="Click to copy hash" src=${identicon.dataURL} @click=${this.copyToClipboard}>
 `;
     }
 }

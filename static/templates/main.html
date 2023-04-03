@@ -23,11 +23,11 @@
 			     </div>
 			     <div class="col-md-8">
 				 <div class="card-body">
-				     <h5 class="card-title mb-0 text-nowrap text-truncate" :title="app.name">
-					 {{ app.name }}
+				     <h5 class="card-title mb-0 text-nowrap text-truncate" :title="app.title">
+					 {{ app.title }}
 				     </h5>
-				     <p class="card-text text-nowrap text-truncate" :title="app.description">
-					 {{ app.description }}&nbsp;
+				     <p class="card-text text-nowrap text-truncate" :title="app.subtitle">
+					 {{ app.subtitle }}&nbsp;
 				     </p>
 				     <p class="card-text text-nowrap text-truncate">
 					 <small class="text-muted">Last updated {{ $filters.time( app.last_updated ) }}</small>

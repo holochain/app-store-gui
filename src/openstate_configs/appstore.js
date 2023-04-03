@@ -16,8 +16,8 @@ function assert_holohash ( input, type ) {
 }
 
 const DNA_ALIAS_MAP			= {
-    "dnarepo":	localStorage.getItem("DNAREPO_DNA_HASH")	|| "uhC0k-kJ9Pby_BZulezgTO8aiWDtbYW4HIx16sORULFd_Y2hlcATb",
-    "happs":	localStorage.getItem("HAPPS_DNA_HASH")		|| "uhC0kXms4EuHzdmA9veWo04hq2J5_W48Q8XHDdFMgNalH5LXHfBJc",
+    "dnarepo":	localStorage.getItem("DNAREPO_DNA_HASH")	|| "uhC0kabj92rdlbgSoj-Gq3uugf7Z8nQN2rplLGBhmCEzRSNItFwZt",
+    "happs":	localStorage.getItem("HAPPS_DNA_HASH")		|| "uhC0kYlLSDZHxjvau6nQZ2tg6_VzfjzpuMCUT2yBhUSPZBAB8hoDy",
 };
 
 module.exports				= (appstore, devhub) => ({
@@ -234,9 +234,9 @@ module.exports				= (appstore, devhub) => ({
 
 	    return app;
 	},
-	toMutable ({ name, description, icon, publisher, devhub_address }) {
+	toMutable ({ title, subtitle, description, icon, publisher, devhub_address }) {
 	    return {
-		name, description, icon,
+		title, subtitle, description, icon,
 		"publisher":	String( publisher ),
 		"devhub_address": {
 		    "dna":	String( devhub_address.dna ),
@@ -272,8 +272,11 @@ module.exports				= (appstore, devhub) => ({
 		}
 	    }
 
-	    if ( typeof data.name !== "string" || data.name.trim() === "" )
-		rejections.push(`Name is required`);
+	    if ( typeof data.title !== "string" || data.title.trim() === "" )
+		rejections.push(`Title is required`);
+
+	    if ( typeof data.subtitle !== "string" || data.subtitle.trim() === "" )
+		rejections.push(`Subtitle is required`);
 
 	    if ( typeof data.description !== "string" )
 		rejections.push(`Description is required`);
@@ -435,7 +438,7 @@ module.exports				= (appstore, devhub) => ({
 	    const latest_happ_release		= happ_releases[0];
 
 	    if ( !(app.devhub_address.gui || latest_happ_release.official_gui) )
-		throw new Error(`No Official GUI for hApp Release '${latest_happ_release.name}' (${latest_happ_release.$id})`);
+		throw new Error(`No Official GUI for hApp Release '${latest_happ_release.version}' (${latest_happ_release.$id})`);
 
 	    let gui_release_id;
 	    if ( app.devhub_address.gui ) {

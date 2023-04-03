@@ -53,6 +53,15 @@ module.exports = async function ( CONDUCTOR_URI, APP_ID ) {
 	return payload;
     });
 
+    log.normal("App schema");
+    log.level.normal && Object.entries( appstore._app_schema._dnas ).forEach( ([nick, schema]) => {
+	log.normal("  %s : %s", nick.padStart( 10 ), String( schema._hash ) );
+
+	log.level.info && Object.entries( schema._zomes ).forEach( ([name, zome_api]) => {
+	    log.info("  %s : %s", name.padStart( 10 ), zome_api._name );
+	});
+    });
+
     crux_config.upgrade( appstore );
 
     return [ appstore ];

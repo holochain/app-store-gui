@@ -16,7 +16,7 @@
 	    </span>
 	</div>
 	<div class="position-absolute bottom-0 end-0 pb-3 pe-5">
-	    <router-link :to="'/publishers/' + id + '/update'">
+	    <router-link v-if="$publisher.writable" :to="'/publishers/' + id + '/update'">
 		<a-icon class="btn-primary">
 		    <i class="bi-pencil"></i>
 		</a-icon>
@@ -26,6 +26,11 @@
 
     <div class="container my-4">
 	<h4>Details</h4>
+
+	<div class="data-box my-2" v-if="publisher.description">
+	    <label>Description</label>
+	    <p>{{ publisher.description }}</p>
+	</div>
 
 	<div class="data-box my-2" v-if="publisher.email">
 	    <label>Email</label>
