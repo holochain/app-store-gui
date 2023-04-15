@@ -172,7 +172,7 @@ module.exports = async function () {
 		    });
 
 		    console.log("App pacakge:", bytes );
-		    this.download( `${this.app.name}.webhapp`, bytes );
+		    this.download( `${this.app.title}.webhapp`, bytes );
 		},
 	    },
 	};

@@ -20,7 +20,6 @@ reset-lair:
 reset-all:		reset-holochain reset-lair
 setup:			$(HAPPS)
 	node tests/setup.js app-store
-	node tests/setup.js devhub	alice
 	node tests/setup.js devhub	bobby
 
 $(DEVHUB_HAPP):
@@ -127,16 +126,22 @@ static/web-components/purewc-select-search.js:		node_modules/@purewc/select-sear
 	cp $< $@
 	cp $<.map $@.map
 
+use-local-crux:
+	npm uninstall @whi/crux-payload-parser
+	npm install ../js-crux-payload-parser
+use-npm-crux:
+	npm uninstall @whi/crux-payload-parser
+	npm install @whi/crux-payload-parser
 use-local-client:
 	npm uninstall @whi/holochain-client
-	npm install --save ../js-holochain-client/whi-holochain-client-0.78.0.tgz
+	npm install --save ../holochain-client-js/
 use-npm-client:
 	npm uninstall @whi/holochain-client
 	npm install --save @whi/holochain-client
 
 use-local-backdrop:
 	npm uninstall @whi/holochain-backdrop
-	npm install --save ../js-holochain-backdrop/
+	npm install --save ../node-holochain-backdrop/
 use-npm-backdrop:
 	npm uninstall @whi/holochain-backdrop
 	npm install --save @whi/holochain-backdrop

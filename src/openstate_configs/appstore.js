@@ -16,8 +16,8 @@ function assert_holohash ( input, type ) {
 }
 
 const DNA_ALIAS_MAP			= {
-    "dnarepo":	localStorage.getItem("DNAREPO_DNA_HASH")	|| "uhC0kabj92rdlbgSoj-Gq3uugf7Z8nQN2rplLGBhmCEzRSNItFwZt",
-    "happs":	localStorage.getItem("HAPPS_DNA_HASH")		|| "uhC0kYlLSDZHxjvau6nQZ2tg6_VzfjzpuMCUT2yBhUSPZBAB8hoDy",
+    "dnarepo":	localStorage.getItem("DNAREPO_DNA_HASH")	|| "uhCAk_PlUOCxp5vocAzfjVt8BioUmzQsFsnvftGOqNKdkHlzD8WMR",
+    "happs":	localStorage.getItem("HAPPS_DNA_HASH")		|| "uhC0kuEhvxERxITc5FqO1LZcn7f9ygsKjr_lBto-x4ri11zbhD06Z",
 };
 
 module.exports				= (appstore, devhub) => ({
@@ -461,7 +461,7 @@ module.exports				= (appstore, devhub) => ({
 	    }
 
 	    const bytes				= await devhub.call( "happs", "happ_library", "get_webhapp_package", {
-		"name": app.name,
+		"name": app.title,
 		"happ_release_id": latest_happ_release.$id,
 		"gui_release_id": gui_release_id,
 	    }, 60_000 );
