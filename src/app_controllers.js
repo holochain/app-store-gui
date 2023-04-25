@@ -3,6 +3,7 @@ const log				= new Logger("apps");
 
 const common				= require('./common.js');
 const { HoloHash,
+	DnaHash,
 	AgentPubKey }			= holohash;
 
 
@@ -13,6 +14,7 @@ module.exports = async function () {
 	    "data": function() {
 		return {
 		    "use_official_gui":	true,
+		    "invalid_dna_hash":	null,
 		    "datapath":		`app/${common.randomHex()}`,
 		};
 	    },
@@ -22,22 +24,22 @@ module.exports = async function () {
 
 		happ_datapath () {
 		    return this.app$.devhub_address.happ
-			? `happ/${this.app$.devhub_address.happ}`
+			? `${this.app$.devhub_address.dna}/happ/${this.app$.devhub_address.happ}`
 			: this.$openstate.DEADEND;
 		},
 		happ_release_datapath () {
 		    return this.app$.devhub_address.happ
-			? `happ/${this.app$.devhub_address.happ}/releases/latest`
+			? `${this.app$.devhub_address.dna}/happ/${this.app$.devhub_address.happ}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		gui_datapath () {
 		    return this.app$.devhub_address.gui
-			? `gui/${this.app$.devhub_address.gui}`
+			? `${this.app$.devhub_address.dna}/gui/${this.app$.devhub_address.gui}`
 			: this.$openstate.DEADEND;
 		},
 		gui_release_datapath () {
 		    return this.app$.devhub_address.gui
-			? `gui/${this.app$.devhub_address.gui}/releases/latest`
+			? `${this.app$.devhub_address.dna}/gui/${this.app$.devhub_address.gui}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		...common.scopedPathComputed( c => c.happ_datapath, "happ" ),
@@ -45,12 +47,23 @@ module.exports = async function () {
 		...common.scopedPathComputed( c => c.gui_datapath, "gui" ),
 		...common.scopedPathComputed( c => c.gui_release_datapath, "gui_release" ),
 	    },
-	    async created () {
-		this.app$.devhub_address.dna	= await this.$openstate.get(`dna/alias/happs`);
-	    },
 	    "methods": {
 		clearErrors () {
 		    this.app_errors.write	= null;
+		},
+		checkDevHubDNA ( dna_hash ) {
+		    try {
+			new DnaHash( dna_hash );
+			this.invalid_dna_hash		= true;
+
+			this.$openstate.read( this.happ_datapath ).then( happ => {
+			    this.$openstate.read( this.happ_release_datapath );
+			});
+		    } catch (err) {
+			this.invalid_dna_hash		= err.name === "BadPrefixError"
+			    ? `Invalid DNA hash.  A DNA hash will start with "uhC0k" and will be 53 characters long.`
+			    : `Holo Hash Error: [${err.name}] ${err.message}`;
+		    }
 		},
 		setDevHubHapp ( happ_id ) {
 		    this.app$.devhub_address.happ	= happ_id;
@@ -124,22 +137,22 @@ module.exports = async function () {
 	    "computed": {
 		happ_datapath () {
 		    return this.app?.devhub_address.happ
-			? `happ/${this.app.devhub_address.happ}`
+			? `${this.app.devhub_address.dna}/happ/${this.app.devhub_address.happ}`
 			: this.$openstate.DEADEND;
 		},
 		happ_release_datapath () {
 		    return this.app?.devhub_address.happ
-			? `happ/${this.app$.devhub_address.happ}/releases/latest`
+			? `${this.app.devhub_address.dna}/happ/${this.app$.devhub_address.happ}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		gui_datapath () {
 		    return this.app?.devhub_address.gui
-			? `gui/${this.app.devhub_address.gui}`
+			? `${this.app.devhub_address.dna}/gui/${this.app.devhub_address.gui}`
 			: this.$openstate.DEADEND;
 		},
 		gui_release_datapath () {
 		    return this.app?.devhub_address.gui
-			? `gui/${this.app$.devhub_address.gui}/releases/latest`
+			? `${this.app.devhub_address.dna}/gui/${this.app$.devhub_address.gui}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		...common.scopedPathComputed( c => c.datapath, "app" ),
@@ -188,28 +201,29 @@ module.exports = async function () {
 		    id,
 		    "datapath":		`app/${id}`,
 		    "new_icon":		null,
+		    "invalid_dna_hash":	null,
 		    "use_official_gui":	true,
 		};
 	    },
 	    "computed": {
 		happ_datapath () {
 		    return this.app$.devhub_address.happ
-			? `happ/${this.app$.devhub_address.happ}`
+			? `${this.app$.devhub_address.dna}/happ/${this.app$.devhub_address.happ}`
 			: this.$openstate.DEADEND;
 		},
 		happ_release_datapath () {
 		    return this.app$.devhub_address.happ
-			? `happ/${this.app$.devhub_address.happ}/releases/latest`
+			? `${this.app$.devhub_address.dna}/happ/${this.app$.devhub_address.happ}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		gui_datapath () {
 		    return this.app$.devhub_address.gui
-			? `gui/${this.app$.devhub_address.gui}`
+			? `${this.app$.devhub_address.dna}/gui/${this.app$.devhub_address.gui}`
 			: this.$openstate.DEADEND;
 		},
 		gui_release_datapath () {
 		    return this.app$.devhub_address.gui
-			? `gui/${this.app$.devhub_address.gui}/releases/latest`
+			? `${this.app$.devhub_address.dna}/gui/${this.app$.devhub_address.gui}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		...common.scopedPathComputed( c => c.datapath, "app" ),
@@ -229,8 +243,6 @@ module.exports = async function () {
 		this.readDevHubHapp();
 		if ( this.app$.devhub_address.gui )
 		    this.readDevHubGUI();
-
-		this.app$.devhub_address.dna	= await this.$openstate.get(`dna/alias/happs`);
 	    },
 	    "methods": {
 		async readDevHubHapp () {
@@ -240,6 +252,20 @@ module.exports = async function () {
 		async readDevHubGUI () {
 		    await this.$openstate.read( this.gui_datapath );
 		    await this.$openstate.read( this.gui_release_datapath );
+		},
+		checkDevHubDNA ( dna_hash ) {
+		    try {
+			new DnaHash( dna_hash );
+			this.invalid_dna_hash		= true;
+
+			this.$openstate.read( this.happ_datapath ).then( happ => {
+			    this.$openstate.read( this.happ_release_datapath );
+			});
+		    } catch (err) {
+			this.invalid_dna_hash		= err.name === "BadPrefixError"
+			    ? `Invalid DNA hash.  A DNA hash will start with "uhC0k" and will be 53 characters long.`
+			    : `Holo Hash Error: [${err.name}] ${err.message}`;
+		    }
 		},
 		setDevHubHapp ( happ_id ) {
 		    this.app$.devhub_address.happ	= happ_id;

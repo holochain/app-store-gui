@@ -48,75 +48,92 @@
 
 	<h5 class="mt-4">DevHub Assets</h5>
 
-	<div v-if="app$.devhub_address.happ" class="card entity-ref happ-ref my-2">
-	    <a class="position-absolute top-0 end-0 m-1" @click="app$.devhub_address.happ = null">
-		<i class="bi-x-lg"></i>
-	    </a>
-
-	    <div v-if="happ" class="d-flex align-items-center">
-		<p class="col">
-		    <span class="fw-bold">{{ happ.title }}:</span>
-		    {{ happ.subtitle }}<br>
-		    <span class="fw-light">{{ happ.description || 'No description' }}</span>
-		    <br><br>
-		    <i>Latest Release: {{ happ_release?.version }}</i>
-		</p>
-		<identicon-img :seed="app$.devhub_address.happ" size="50"></identicon-img>
-	    </div>
-	    <div v-else-if="happ_errors.read" class="text-danger py-1">
-		{{ happ_errors.read.message }}
-	    </div>
-	    <div v-else-if="app$.devhub_address.happ" class="text-center mb-1">
-		<div class="spinner-border"></div>
-	    </div>
-	    <div v-else class="text-center pb-2">
-		Waiting for hApp ID...
+	<div class="data-box my-2">
+	    <label class="form-label">hApps DNA</label>
+	    <input class="form-control" :class="{ 'is-invalid': typeof invalid_dna_hash === 'string' }"
+		   v-model="app$.devhub_address.dna"
+		   @change="checkDevHubDNA( $event.target.value )"
+		   placeholder="DNA Hash" required>
+	    <div class="invalid-feedback">
+		{{ invalid_dna_hash }}
 	    </div>
 	</div>
-	<div v-else class="data-box my-2">
-	    <label class="form-label">hApp</label>
-	    <input class="form-control" @change="setDevHubHapp( $event.target.value )"
-		   placeholder="Entry Hash" required>
-	</div>
 
-	<div v-if="!app$.devhub_address.gui">
-	    <input type="checkbox" v-model="use_official_gui"> Use hApp's Official GUI
-	</div>
-
-	<template v-if="!use_official_gui">
-	    <div v-if="app$.devhub_address.gui" class="card entity-ref gui-ref my-2">
-		<a class="position-absolute top-0 end-0 m-1"
-		   @click="app$.devhub_address.gui = null">
+	<div v-if="app$.devhub_address.dna">
+	    <div v-if="app$.devhub_address.happ" class="card entity-ref happ-ref my-2">
+		<a class="position-absolute top-0 end-0 m-1" @click="app$.devhub_address.happ = null">
 		    <i class="bi-x-lg"></i>
 		</a>
 
-		<div v-if="gui" class="d-flex align-items-center">
+		<div v-if="happ" class="d-flex align-items-center">
 		    <p class="col">
-			<span class="fw-bold">{{ gui.name }}</span><br>
-			<span class="fw-light">{{ gui.description || 'No description' }}</span>
+			<span class="fw-bold">{{ happ.title }}:</span>
+			{{ happ.subtitle }}<br>
+			<span class="fw-light">{{ happ.description || 'No description' }}</span>
 			<br><br>
-			<i>Latest Release: v{{ gui_release?.version }}</i>
+			<i>Latest Release: {{ happ_release?.version }}</i>
+			<br>
+			<span v-if="!happ_release?.official_gui" class="text-warning">
+			    <i>Latest Release does not have an official GUI</i>
+			</span>
 		    </p>
-		    <identicon-img :seed="app$.devhub_address.gui" size="50"></identicon-img>
+		    <identicon-img :seed="app$.devhub_address.happ" size="50"></identicon-img>
 		</div>
-		<div v-else-if="gui_errors.read" class="text-danger py-1">
-		    {{ gui_errors.read.message }}
+		<div v-else-if="happ_errors.read" class="text-danger py-1">
+		    {{ happ_errors.read.message }}
 		</div>
-		<div v-else-if="app$.devhub_address.gui" class="text-center mb-1">
-		    <div class="spinner-border" role="status">
-			<span class="visually-hidden">Loading...</span>
-		    </div>
+		<div v-else-if="app$.devhub_address.happ" class="text-center mb-1">
+		    <div class="spinner-border"></div>
 		</div>
 		<div v-else class="text-center pb-2">
 		    Waiting for hApp ID...
 		</div>
 	    </div>
 	    <div v-else class="data-box my-2">
-		<label class="form-label">GUI</label>
-		<input class="form-control" @change="setDevHubGUI( $event.target.value )"
+		<label class="form-label">hApp</label>
+		<input class="form-control" @change="setDevHubHapp( $event.target.value )"
 		       placeholder="Entry Hash" required>
 	    </div>
-	</template>
+
+	    <div v-if="!app$.devhub_address.gui">
+		<input type="checkbox" v-model="use_official_gui"> Use hApp's Official GUI
+	    </div>
+
+	    <template v-if="!use_official_gui">
+		<div v-if="app$.devhub_address.gui" class="card entity-ref gui-ref my-2">
+		    <a class="position-absolute top-0 end-0 m-1"
+		       @click="app$.devhub_address.gui = null">
+			<i class="bi-x-lg"></i>
+		    </a>
+
+		    <div v-if="gui" class="d-flex align-items-center">
+			<p class="col">
+			    <span class="fw-bold">{{ gui.name }}</span><br>
+			    <span class="fw-light">{{ gui.description || 'No description' }}</span>
+			    <br><br>
+			    <i>Latest Release: v{{ gui_release?.version }}</i>
+			</p>
+			<identicon-img :seed="app$.devhub_address.gui" size="50"></identicon-img>
+		    </div>
+		    <div v-else-if="gui_errors.read" class="text-danger py-1">
+			{{ gui_errors.read.message }}
+		    </div>
+		    <div v-else-if="app$.devhub_address.gui" class="text-center mb-1">
+			<div class="spinner-border" role="status">
+			    <span class="visually-hidden">Loading...</span>
+			</div>
+		    </div>
+		    <div v-else class="text-center pb-2">
+			Waiting for hApp ID...
+		    </div>
+		</div>
+		<div v-else class="data-box my-2">
+		    <label class="form-label">GUI</label>
+		    <input class="form-control" @change="setDevHubGUI( $event.target.value )"
+			   placeholder="Entry Hash" required>
+		</div>
+	    </template>
+	</div>
     </div>
 
     <div class="container my-4">

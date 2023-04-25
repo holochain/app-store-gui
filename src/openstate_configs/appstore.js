@@ -15,23 +15,7 @@ function assert_holohash ( input, type ) {
 	throw new TypeError(`Wrong HoloHash type '${hash.constructor.name}'; expected '${type}'`);
 }
 
-const DNA_ALIAS_MAP			= {
-    "dnarepo":	localStorage.getItem("DNAREPO_DNA_HASH")	|| "uhCAk_PlUOCxp5vocAzfjVt8BioUmzQsFsnvftGOqNKdkHlzD8WMR",
-    "happs":	localStorage.getItem("HAPPS_DNA_HASH")		|| "uhC0kuEhvxERxITc5FqO1LZcn7f9ygsKjr_lBto-x4ri11zbhD06Z",
-};
-
 module.exports				= (appstore, devhub) => ({
-    "DNA Alias": {
-	"path": "dna/alias/:alias",
-	"readonly": true,
-	async read ({ alias }) {
-	    if ( !(alias in DNA_ALIAS_MAP) )
-		throw new Error(`Unknown alias '${alias}'"`);
-
-	    return new DnaHash( DNA_ALIAS_MAP[ alias ] );
-	    // return new DnaHash( await appstore.call("appstore", "appstore_api", "get_dna_hash", alias ) );
-	},
-    },
     "Agent": {
 	"path": "agent/:id",
 	"readonly": true,
@@ -343,9 +327,8 @@ module.exports				= (appstore, devhub) => ({
 	"path": "devhub/hosts/:dna",
 	"readonly": true,
 	async read ({ dna }) {
-	    const dna_hash			= await openstate.read(`dna/alias/${dna}`);
 	    const list				= await appstore.call("portal", "portal_api", "get_registered_hosts", {
-		"dna": dna_hash,
+		"dna": dna,
 	    });
 
 	    for ( let host of list ) {
@@ -360,9 +343,8 @@ module.exports				= (appstore, devhub) => ({
 	"path": "devhub/hosts/:dna/:zome/:func",
 	"readonly": true,
 	async read ({ dna, zome, func }) {
-	    const dna_hash			= await openstate.read(`dna/alias/${dna}`);
 	    const list				= await appstore.call("portal", "portal_api", "get_hosts_for_zome_function", {
-		"dna": dna_hash,
+		"dna": dna,
 		"zome": zome,
 		"function": func,
 	    });
@@ -423,12 +405,12 @@ module.exports				= (appstore, devhub) => ({
 	async read ({ id }) {
 	    const app				= await this.openstate.get(`app/${id}`);
 
-	    const happ_releases			= await devhub.call( "happs", "happ_library", "get_happ_releases", {
+	    const happ_releases			= await devhub.call( app.devhub_address.dna, "happ_library", "get_happ_releases", {
 		"for_happ": app.devhub_address.happ,
 	    }, 10_000 );
 
 	    if ( happ_releases.length === 0 ) {
-		const happ			= await devhub.call( "happs", "happ_library", "get_happ", {
+		const happ			= await devhub.call( app.devhub_address.dna, "happ_library", "get_happ", {
 		    "id": app.devhub_address.happ,
 		}, 10_000 );
 
@@ -442,12 +424,12 @@ module.exports				= (appstore, devhub) => ({
 
 	    let gui_release_id;
 	    if ( app.devhub_address.gui ) {
-		const gui_releases		= await devhub.call( "happs", "happ_library", "get_gui_releases", {
+		const gui_releases		= await devhub.call( app.devhub_address.dna, "happ_library", "get_gui_releases", {
 		    "for_gui": app.devhub_address.gui,
 		}, 10_000 );
 
 		if ( gui_releases.length === 0 ) {
-		    const gui			= await devhub.call( "happs", "happ_library", "get_gui", {
+		    const gui			= await devhub.call( app.devhub_address.dna, "happ_library", "get_gui", {
 			"id": gui_id,
 		    }, 10_000 );
 
@@ -460,7 +442,7 @@ module.exports				= (appstore, devhub) => ({
 		gui_release_id			= latest_happ_release.official_gui;
 	    }
 
-	    const bytes				= await devhub.call( "happs", "happ_library", "get_webhapp_package", {
+	    const bytes				= await devhub.call( app.devhub_address.dna, "happ_library", "get_webhapp_package", {
 		"name": app.title,
 		"happ_release_id": latest_happ_release.$id,
 		"gui_release_id": gui_release_id,
@@ -489,12 +471,13 @@ module.exports				= (appstore, devhub) => ({
 	},
     },
     "hApp": {
-	"path": "happ/:id",
-	async read ({ id }) {
+	"path": ":dna/happ/:id",
+	async read ({ dna, id }) {
+	    assert_holohash( dna, "DnaHash" );
 	    assert_holohash( id, "EntryHash" );
 
 	    try {
-		return await devhub.call("happs", "happ_library", "get_happ", { id });
+		return await devhub.call( dna , "happ_library", "get_happ", { id });
 	    } catch (err) {
 		if ( err.name === "DeserializationError"
 		     && err.message.includes("Failed to deserialize to entry type") )
@@ -512,7 +495,7 @@ module.exports				= (appstore, devhub) => ({
 	    };
 	},
 	async create ( input ) {
-	    const happ			= await devhub.call("happs", "happ_library", "create_happ", input );
+	    const happ			= await devhub.call( this.params.dna, "happ_library", "create_happ", input );
 
 	    this.openstate.state[`happ/${happ.$id}`] = happ;
 
@@ -528,14 +511,14 @@ module.exports				= (appstore, devhub) => ({
 	},
 	async update ({ id }, changed, intent ) {
 	    if ( intent === "deprecation" ) {
-		return await devhub.call("happs", "happ_library", "deprecate_happ", {
+		return await devhub.call( this.params.dna, "happ_library", "deprecate_happ", {
 		    "addr": this.state.$action,
 		    "message": changed.deprecation,
 		});
 	    }
 
 	    console.log("Update:", id, changed );
-	    return await devhub.call("happs", "happ_library", "update_happ", {
+	    return await devhub.call( this.params.dna, "happ_library", "update_happ", {
 		"addr": this.state.$action,
 		"properties": changed,
 	    });
@@ -580,12 +563,13 @@ module.exports				= (appstore, devhub) => ({
 	},
     },
     "Releases for hApp": {
-	"path": "happ/:id/releases",
+	"path": ":dna/happ/:id/releases",
 	"readonly": true,
-	async read ({ id }) {
+	async read ({ dna, id }) {
+	    assert_holohash( dna, "DnaHash" );
 	    assert_holohash( id, "EntryHash" );
 
-	    const list		= await devhub.call("happs", "happ_library", "get_happ_releases", {
+	    const list		= await devhub.call( dna, "happ_library", "get_happ_releases", {
 		"for_happ": id,
 	    });
 
@@ -593,10 +577,10 @@ module.exports				= (appstore, devhub) => ({
 	},
     },
     "Latest Release for hApp": {
-	"path": "happ/:id/releases/latest",
+	"path": ":dna/happ/:id/releases/latest",
 	"readonly": true,
-	async read ({ id }) {
-	    const releases		= await this.openstate.read(`happ/${id}/releases`);
+	async read ({ dna, id }) {
+	    const releases		= await this.openstate.read(`${dna}/happ/${id}/releases`);
 
 	    return releases.reduce( (acc, release, i) => {
 		if ( acc === null )
@@ -610,12 +594,13 @@ module.exports				= (appstore, devhub) => ({
 	},
     },
     "GUI": {
-	"path": "gui/:id",
-	async read ({ id }) {
+	"path": ":dna/gui/:id",
+	async read ({ dna, id }) {
+	    assert_holohash( dna, "DnaHash" );
 	    assert_holohash( id, "EntryHash" );
 
 	    try {
-		return await devhub.call("happs", "happ_library", "get_gui", { id });
+		return await devhub.call( dna, "happ_library", "get_gui", { id });
 	    } catch (err) {
 		if ( err.name === "DeserializationError"
 		     && err.message.includes("Failed to deserialize to entry type") )
@@ -645,7 +630,7 @@ module.exports				= (appstore, devhub) => ({
 	    };
 	},
 	async create ( input ) {
-	    const gui			= await devhub.call("happs", "happ_library", "create_gui", input );
+	    const gui			= await devhub.call( this.params.dna, "happ_library", "create_gui", input );
 
 	    this.openstate.state[`gui/${gui.$id}`] = gui;
 
@@ -653,13 +638,13 @@ module.exports				= (appstore, devhub) => ({
 	},
 	async update ({ id }, changed, intent ) {
 	    if ( intent === "deprecation" ) {
-		return await devhub.call("happs", "happ_library", "deprecate_gui", {
+		return await devhub.call( this.params.dna, "happ_library", "deprecate_gui", {
 		    "addr": this.state.$action,
 		    "message": changed.deprecation,
 		});
 	    }
 
-	    return await devhub.call("happs", "happ_library", "update_gui", {
+	    return await devhub.call( this.params.dna, "happ_library", "update_gui", {
 		"addr": this.state.$action,
 		"properties": changed,
 	    });
@@ -703,12 +688,13 @@ module.exports				= (appstore, devhub) => ({
 	},
     },
     "Releases for GUI": {
-	"path": "gui/:id/releases",
+	"path": ":dna/gui/:id/releases",
 	"readonly": true,
-	async read ({ id }) {
+	async read ({ dna, id }) {
+	    assert_holohash( dna, "DnaHash" );
 	    assert_holohash( id, "EntryHash" );
 
-	    const list		= await devhub.call("happs", "happ_library", "get_gui_releases", {
+	    const list		= await devhub.call( dna, "happ_library", "get_gui_releases", {
 		"for_gui": id,
 	    });
 
@@ -716,10 +702,10 @@ module.exports				= (appstore, devhub) => ({
 	},
     },
     "Latest Release for GUI": {
-	"path": "gui/:id/releases/latest",
+	"path": ":dna/gui/:id/releases/latest",
 	"readonly": true,
-	async read ({ id }) {
-	    const releases		= await this.openstate.read(`gui/${id}/releases`);
+	async read ({ dna, id }) {
+	    const releases		= await this.openstate.read(`${dna}/gui/${id}/releases`);
 
 	    return releases.reduce( (acc, release, i) => {
 		if ( acc === null )

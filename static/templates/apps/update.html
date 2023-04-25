@@ -30,8 +30,13 @@
 	<h4>Details</h4>
 
 	<div class="data-box my-2">
-	    <label class="form-label">App Name</label>
-	    <input class="form-control" v-model="app$.name" required>
+	    <label class="form-label">App Title</label>
+	    <input class="form-control" v-model="app$.title" required>
+	</div>
+
+	<div class="data-box my-2">
+	    <label class="form-label">App Subtitle</label>
+	    <input class="form-control" v-model="app$.subtitle" required>
 	</div>
 
 	<div class="data-box my-2">
@@ -53,6 +58,17 @@
 
 	<h5 class="mt-4">DevHub Assets</h5>
 
+	<div class="data-box my-2">
+	    <label class="form-label">hApps DNA</label>
+	    <input class="form-control" :class="{ 'is-invalid': typeof invalid_dna_hash === 'string' }"
+		   v-model="app$.devhub_address.dna"
+		   @change="checkDevHubDNA( $event.target.value )"
+		   placeholder="DNA Hash" required>
+	    <div class="invalid-feedback">
+		{{ invalid_dna_hash }}
+	    </div>
+	</div>
+
 	<div v-if="app$.devhub_address.happ" class="card entity-ref happ-ref my-2">
 	    <a class="position-absolute top-0 end-0 m-1" @click="app$.devhub_address.happ = null">
 		<i class="bi-x-lg"></i>
@@ -64,7 +80,11 @@
 		    {{ happ.subtitle }}<br>
 		    <span class="fw-light">{{ happ.description || 'No description' }}</span>
 		    <br><br>
-		    <i>Latest Release: {{ happ_release?.name }}</i>
+		    <i>Latest Release: {{ happ_release?.version }}</i>
+		    <br>
+		    <span v-if="!happ_release?.official_gui" class="text-warning">
+			<i>Latest Release does not have an official GUI</i>
+		    </span>
 		</p>
 		<identicon-img :seed="app$.devhub_address.happ" size="50"></identicon-img>
 	    </div>

@@ -36,9 +36,8 @@ module.exports = async function ([ appstore ]) {
     });
 
     const devhub			= {
-	async call ( dna, zome, func, payload, timeout ) {
-	    const available_host	= await openstate.get(`devhub/hosts/${dna}/${zome}/${func}/any`);
-	    const dna_hash		= await openstate.get(`dna/alias/${dna}`);
+	async call ( dna_hash, zome, func, payload, timeout ) {
+	    const available_host	= await openstate.get(`devhub/hosts/${dna_hash}/${zome}/${func}/any`);
 	    const call_details		= {
 		"dna": dna_hash,
 		"zome": zome,
