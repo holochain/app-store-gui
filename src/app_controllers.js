@@ -48,6 +48,18 @@ module.exports = async function () {
 		...common.scopedPathComputed( c => c.gui_release_datapath, "gui_release" ),
 	    },
 	    "methods": {
+		refreshDevHubPaths () {
+		    if ( this.happ_datapath !== this.$openstate.DEADEND ) {
+			this.$openstate.read( this.happ_datapath ).then( () => {
+			    this.$openstate.read( this.happ_release_datapath );
+			});
+		    }
+		    if ( this.gui_datapath !== this.$openstate.DEADEND ) {
+			this.$openstate.read( this.gui_datapath ).then( () => {
+			    this.$openstate.read( this.gui_release_datapath );
+			});
+		    }
+		},
 		clearErrors () {
 		    this.app_errors.write	= null;
 		},
@@ -56,9 +68,7 @@ module.exports = async function () {
 			new DnaHash( dna_hash );
 			this.invalid_dna_hash		= true;
 
-			this.$openstate.read( this.happ_datapath ).then( happ => {
-			    this.$openstate.read( this.happ_release_datapath );
-			});
+			this.refreshDevHubPaths();
 		    } catch (err) {
 			this.invalid_dna_hash		= err.name === "BadPrefixError"
 			    ? `Invalid DNA hash.  A DNA hash will start with "uhC0k" and will be 53 characters long.`
@@ -142,7 +152,7 @@ module.exports = async function () {
 		},
 		happ_release_datapath () {
 		    return this.app?.devhub_address.happ
-			? `${this.app.devhub_address.dna}/happ/${this.app$.devhub_address.happ}/releases/latest`
+			? `${this.app.devhub_address.dna}/happ/${this.app.devhub_address.happ}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		gui_datapath () {
@@ -152,7 +162,7 @@ module.exports = async function () {
 		},
 		gui_release_datapath () {
 		    return this.app?.devhub_address.gui
-			? `${this.app.devhub_address.dna}/gui/${this.app$.devhub_address.gui}/releases/latest`
+			? `${this.app.devhub_address.dna}/gui/${this.app.devhub_address.gui}/releases/latest`
 			: this.$openstate.DEADEND;
 		},
 		...common.scopedPathComputed( c => c.datapath, "app" ),
@@ -162,6 +172,14 @@ module.exports = async function () {
 		...common.scopedPathComputed( c => c.happ_release_datapath, "happ_release" ),
 		...common.scopedPathComputed( c => c.gui_datapath, "gui" ),
 		...common.scopedPathComputed( c => c.gui_release_datapath, "gui_release" ),
+
+		deprecationModal () {
+		    console.log( this.$refs );
+		    return new bootstrap.Modal( this.$refs["deprecation-modal"], {
+			"backdrop": "static",
+			"keyboard": false,
+		    });
+		},
 	    },
 	    "methods": {
 		refresh () {
@@ -186,6 +204,12 @@ module.exports = async function () {
 
 		    console.log("App pacakge:", bytes );
 		    this.download( `${this.app.title}.webhapp`, bytes );
+		},
+		async confirmDeprecation () {
+		    log.normal("Deprecating App %s", this.app.title );
+		    await this.$openstate.write( this.datapath, "deprecation" );
+
+		    this.deprecationModal.hide();
 		},
 	    },
 	};

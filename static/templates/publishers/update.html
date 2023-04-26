@@ -89,13 +89,18 @@
 
     <div class="container my-4">
 	<div class="d-flex justify-content-end gutters gx-2">
+	    <a class="btn btn-secondary ms-0"
+	       @click="navigateBack()">
+		Back
+	    </a>
+	    <span class="flex-grow-1"></span>
 	    <a class="btn btn-primary"
 	       :class="{ 'disabled': $publisher.writing }"
 	       @click="update()">
 		Save
 	    </a>
-	    <a class="btn btn-secondary me-0"
-	       @click="navigateBack()">
+	    <a class="btn btn-outline-warning me-0"
+	       @click="$openstate.resetMutable( datapath ); navigateBack()">
 		Cancel
 	    </a>
 	</div>

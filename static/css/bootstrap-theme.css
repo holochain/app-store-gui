@@ -786,6 +786,31 @@ a:hover .data-box {
 
 
 /*
+   Alert
+*/
+
+.alert {
+  background: none !important;
+}
+
+
+/*
+   Modal
+*/
+
+.modal-content {
+  padding: 1.5em 2em;
+}
+.modal-header {
+  border-bottom: none;
+}
+
+.modal-footer {
+  border-top: none;
+}
+
+
+/*
    Exhibit
 */
 

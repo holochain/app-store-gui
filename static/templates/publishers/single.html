@@ -27,6 +27,15 @@
     <div class="container my-4">
 	<h4>Details</h4>
 
+	<div v-if="publisher.deprecation"
+	     class="alert alert-danger d-flex align-items-center" role="alert">
+	    <i class="bi-exclamation-triangle-fill me-3"></i>
+	    <div>
+		<strong>This Publisher has been deprecated</strong><br>
+		<p class="m-0"><em>Author message: "{{ publisher.deprecation.message }}"</em></p>
+	    </div>
+	</div>
+
 	<div class="data-box my-2" v-if="publisher.description">
 	    <label>Description</label>
 	    <p>{{ publisher.description }}</p>
@@ -52,6 +61,37 @@
 	     class="data-box my-2 d-flex align-items-center gutters gx-2">
 	    <label>{{ agent }}</label>
 	    <identicon-img :seed="agent" color size="50"></identicon-img>
+	</div>
+    </div>
+
+    <div v-if="$publisher.writable" class="container my-4 text-end">
+	<div class="btn btn-danger" @click="deprecationModal.show()">
+	    Deprecate
+	</div>
+    </div>
+
+    <div ref="deprecation-modal" class="modal fade">
+	<div v-if="$publisher.writable"
+	     class="modal-dialog modal-dialog-centered">
+	    <div class="modal-content"
+		 :class="{ 'was-validated': $publisher.failed }">
+		<div class="modal-header">
+		    <h5 class="modal-title">Confirm Deprecation</h5>
+		</div>
+		<div class="modal-body">
+		    <p>You are about to deprecate Publisher '{{ publisher.name }}'</p>
+
+		    <label class="form-label">Reason</label>
+		    <textarea class="form-control"
+			      v-model="publisher$.deprecation"
+			      :disabled="$publisher.writing"
+			      required></textarea>
+		</div>
+		<div class="modal-footer justify-content-center">
+		    <a @click="deprecationModal.hide()" class="btn btn-secondary">Cancel</a>
+		    <a @click="confirmDeprecation()" class="btn btn-danger">Confirm</a>
+		</div>
+	    </div>
 	</div>
     </div>
 </div>

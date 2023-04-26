@@ -37,4 +37,29 @@
 	    </router-link>
 	</div>
     </div>
+
+    <div class="container my-4">
+	<div class="d-flex align-items-center">
+	    <h4 class="col">App(s)</h4>
+	    <router-link class="col-auto"
+			 to="/apps/new">
+		<a-icon class="btn-primary">
+		    <i class="bi-plus-lg"></i>
+		</a-icon>
+	    </router-link>
+	</div>
+
+	<div v-for="app in apps">
+	    <router-link class="transparent"
+			 :to="'/apps/' + app.$id">
+		<div class="data-box my-2 d-flex align-items-center gutters gx-2">
+		    <div class="rounded-circle overflow-hidden"
+			 style="width: 50px; height: 50px;">
+			<holochain-img :os-path="'appstore/memory/' + app.icon"></holochain-img>
+		    </div>
+		    <span class="flex-grow-1">{{ app.title }}: <em>{{ app.subtitle }}</em></span>
+		</div>
+	    </router-link>
+	</div>
+    </div>
 </div>

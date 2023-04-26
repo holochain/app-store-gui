@@ -72,10 +72,23 @@ module.exports = async function () {
 	    },
 	    "computed": {
 		...common.scopedPathComputed( c => c.datapath, "publisher" ),
+
+		deprecationModal () {
+		    return new bootstrap.Modal( this.$refs["deprecation-modal"], {
+			"backdrop": "static",
+			"keyboard": false,
+		    });
+		},
 	    },
 	    "methods": {
 		refresh () {
 		    this.$openstate.read( this.datapath );
+		},
+		async confirmDeprecation () {
+		    log.normal("Deprecating Publisher %s", this.publisher.name );
+		    await this.$openstate.write( this.datapath, "deprecation" );
+
+		    this.deprecationModal.hide();
 		},
 	    },
 	};

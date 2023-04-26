@@ -48,24 +48,27 @@ module.exports = async function () {
 	    "template": await common.load_html("/templates/profiles/single.html"),
 	    "data": function() {
 		return {
-		    "publishers_datapath": `agent/me/publishers`,
+		    "publishers_datapath":	`agent/me/publishers`,
+		    "apps_datapath":		`agent/me/apps`,
 		};
 	    },
 	    async created () {
-		this.mustGet(async () => {
-		    await this.$openstate.read( this.publishers_datapath );
-		});
+		this.mustGet( this.refresh );
 	    },
 	    "computed": {
 		...common.scopedPathComputed( c => c.publishers_datapath, "publishers" ),
+		...common.scopedPathComputed( c => c.apps_datapath, "apps" ),
 
 		agent () {
 		    return this.$root.agent?.pubkey.initial;
-		}
+		},
 	    },
 	    "methods": {
-		refresh () {
-		    this.$openstate.read( this.publishers_datapath );
+		async refresh () {
+		    await Promise.all([
+			this.$openstate.read( this.publishers_datapath ),
+			this.$openstate.read( this.apps_datapath ),
+		    ]);
 		},
 	    },
 	};

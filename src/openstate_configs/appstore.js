@@ -39,16 +39,29 @@ module.exports				= (appstore, devhub) => ({
 	"path": "agent/:id/publishers",
 	"readonly": true,
 	async read ({ id }) {
-	    if ( id === "me" )
-		return await appstore.call("appstore", "appstore_api", "get_my_publishers");
-
-	    const list			= await appstore.call("appstore", "appstore_api", "get_publishers_for_agent", {
-		"for_agent": id,
-	    });
+	    const list			= id === "me"
+		  ? await appstore.call("appstore", "appstore_api", "get_my_publishers")
+		  : await appstore.call("appstore", "appstore_api", "get_publishers_for_agent", { "for_agent": id });
 
 	    for ( let publisher of list ) {
 		const path		= `publisher/${publisher.$id}`;
 		this.openstate.state[path]	= publisher;
+	    }
+
+	    return list;
+	},
+    },
+    "Apps for Agent": {
+	"path": "agent/:id/apps",
+	"readonly": true,
+	async read ({ id }) {
+	    const list			= id === "me"
+		  ? await appstore.call("appstore", "appstore_api", "get_my_apps")
+		  : await appstore.call("appstore", "appstore_api", "get_apps_for_agent", { "for_agent": id });
+
+	    for ( let app of list ) {
+		const path		= `app/${app.$id}`;
+		this.openstate.state[path]	= app;
 	    }
 
 	    return list;
@@ -104,21 +117,46 @@ module.exports				= (appstore, devhub) => ({
 	    return { name, location, website, email, icon };
 	},
 	async update ({ id }, changed, intent ) {
-	    return await appstore.call("appstore", "appstore_api", "update_publisher", {
-		"base": this.state.$action,
-		"properties": changed,
-	    });
+	    let resp;
+	    if ( intent === "deprecation" ) {
+		resp		= await appstore.call("appstore", "appstore_api", "deprecate_publisher", {
+		    "base": this.state.$action,
+		    "message": changed.deprecation,
+		});
+	    } else {
+		resp		= await appstore.call("appstore", "appstore_api", "update_publisher", {
+		    "base": this.state.$action,
+		    "properties": changed,
+		});
+	    }
+
+	    this.openstate.read(`publishers`);
+	    this.openstate.read(`agent/me/publishers`);
+
+	    return resp;
 	},
 	async delete () {
 	    throw new Error(`Publishers cannot be deleted`);
 	},
 	"permissions": {
 	    async writable ( publisher ) {
+		if ( publisher.deprecation )
+		    return false;
 		const agent_info	= await this.get("agent/me");
 		return common.hashesAreEqual( publisher.author, agent_info.pubkey.initial );
 	    },
 	},
 	validation ( data, rejections, intent ) {
+	    if ( intent === "deprecation" ) {
+		if ( data.deprecation === undefined )
+		    rejections.push(`'Deprecation Reason' is required`);
+		else if ( typeof data.deprecation !== "string")
+		    rejections.push(`'Deprecation Reason' must be a string`);
+		else if ( data.deprecation.trim() === "" )
+		    rejections.push(`'Deprecation Reason' cannot be blank`);
+		return;
+	    }
+
 	    if ( typeof data.name !== "string" )
 		rejections.push(`Name is required`);
 
@@ -230,21 +268,46 @@ module.exports				= (appstore, devhub) => ({
 	    };
 	},
 	async update ({ id }, changed, intent ) {
-	    return await appstore.call("appstore", "appstore_api", "update_app", {
-		"base": this.state.$action,
-		"properties": changed,
-	    });
+	    let resp;
+	    if ( intent === "deprecation" ) {
+		resp		= await appstore.call("appstore", "appstore_api", "deprecate_app", {
+		    "base": this.state.$action,
+		    "message": changed.deprecation,
+		});
+	    } else {
+		resp		= await appstore.call("appstore", "appstore_api", "update_app", {
+		    "base": this.state.$action,
+		    "properties": changed,
+		});
+	    }
+
+	    this.openstate.read(`apps`);
+	    this.openstate.read(`agent/me/apps`);
+
+	    return resp;
 	},
 	async delete () {
 	    throw new Error(`Apps cannot be deleted`);
 	},
 	"permissions": {
 	    async writable ( app ) {
+		if ( app.deprecation )
+		    return false;
 		const agent_info	= await this.get("agent/me");
 		return common.hashesAreEqual( app.author, agent_info.pubkey.initial );
 	    },
 	},
 	validation ( data, rejections, intent ) {
+	    if ( intent === "deprecation" ) {
+		if ( data.deprecation === undefined )
+		    rejections.push(`'Deprecation Reason' is required`);
+		else if ( typeof data.deprecation !== "string")
+		    rejections.push(`'Deprecation Reason' must be a string`);
+		else if ( data.deprecation.trim() === "" )
+		    rejections.push(`'Deprecation Reason' cannot be blank`);
+		return;
+	    }
+
 	    if ( data.icon === undefined )
 		rejections.push(`Icon is required`);
 	    else if ( !(data.icon instanceof Uint8Array) ) {
@@ -486,80 +549,16 @@ module.exports				= (appstore, devhub) => ({
 		    throw err;
 	    }
 	},
-	defaultMutable () {
-	    return {
-		"title": "",
-		"subtitle": "",
-		"description": "",
-		"tags": [],
-	    };
-	},
 	async create ( input ) {
-	    const happ			= await devhub.call( this.params.dna, "happ_library", "create_happ", input );
-
-	    this.openstate.state[`happ/${happ.$id}`] = happ;
-
-	    return happ;
-	},
-	toMutable ({ title, subtitle, description, tags }) {
-	    return {
-		title,
-		subtitle,
-		description,
-		tags,
-	    };
+	    throw new Error(`Use the DevHub App to create hApps`);
 	},
 	async update ({ id }, changed, intent ) {
-	    if ( intent === "deprecation" ) {
-		return await devhub.call( this.params.dna, "happ_library", "deprecate_happ", {
-		    "addr": this.state.$action,
-		    "message": changed.deprecation,
-		});
-	    }
-
-	    console.log("Update:", id, changed );
-	    return await devhub.call( this.params.dna, "happ_library", "update_happ", {
-		"addr": this.state.$action,
-		"properties": changed,
-	    });
+	    throw new Error(`Use the DevHub App to update hApps`);
 	},
 	"permissions": {
 	    async writable ( happ ) {
-		if ( happ.deprecation )
-		    return false;
-
-		const agent_info	= await this.get("agent/me");
-		return common.hashesAreEqual( happ.designer, agent_info.pubkey.initial );
+		return false;
 	    },
-	},
-	validation ( data, rejections, intent ) {
-	    const hr_names		= {
-		"title": "hApp Title",
-		"subtitle": "hApp Subtitle",
-		"display_name": "Display Name",
-		"description": "hApp Description",
-	    };
-
-	    if ( intent === "deprecation" ) {
-		console.log("Validate deprecation input", data );
-		if ( data.deprecation === undefined )
-		    rejections.push(`'Deprecation Reason' is required`);
-		else if ( typeof data.deprecation !== "string")
-		    rejections.push(`'Deprecation Reason' must be a string`);
-		else if ( data.deprecation.trim() === "" )
-		    rejections.push(`'Deprecation Reason' cannot be blank`);
-		return;
-	    }
-
-	    ["title", "subtitle", "description"].forEach( key => {
-		if ( [null, undefined].includes( data[key] ) )
-		    rejections.push(`'${hr_names[key]}' is required`);
-	    });
-
-	    ["title", "subtitle"].forEach( key => {
-		if ( common.isEmpty( data[key] ) )
-		    rejections.push(`'${hr_names[key]}' cannot be blank`);
-	    });
 	},
     },
     "Releases for hApp": {
@@ -612,79 +611,16 @@ module.exports				= (appstore, devhub) => ({
 	adapter ( entity ) {
 	    entity.designer		= new AgentPubKey( entity.designer );
 	},
-	defaultMutable () {
-	    return {
-		"name": "",
-		"description": "",
-		"tags": [],
-	    };
-	},
-	toMutable ({ name, description, holo_hosting_settings, tags, screenshots, metadata }) {
-	    return {
-		name,
-		description,
-		holo_hosting_settings,
-		tags,
-		screenshots,
-		metadata,
-	    };
-	},
 	async create ( input ) {
-	    const gui			= await devhub.call( this.params.dna, "happ_library", "create_gui", input );
-
-	    this.openstate.state[`gui/${gui.$id}`] = gui;
-
-	    return gui;
+	    throw new Error(`Use the DevHub App to create GUIs`);
 	},
 	async update ({ id }, changed, intent ) {
-	    if ( intent === "deprecation" ) {
-		return await devhub.call( this.params.dna, "happ_library", "deprecate_gui", {
-		    "addr": this.state.$action,
-		    "message": changed.deprecation,
-		});
-	    }
-
-	    return await devhub.call( this.params.dna, "happ_library", "update_gui", {
-		"addr": this.state.$action,
-		"properties": changed,
-	    });
+	    throw new Error(`Use the DevHub App to update GUIs`);
 	},
 	"permissions": {
 	    async writable ( gui ) {
-		if ( gui.deprecation )
-		    return false;
-
-		const agent_info	= await this.get("agent/me");
-		return common.hashesAreEqual( gui.designer, agent_info.pubkey.initial );
+		return false;
 	    },
-	},
-	validation ( data, rejections, intent ) {
-	    const hr_names		= {
-		"name": "GUI Name",
-		"description": "GUI Description",
-	    };
-
-	    if ( intent === "deprecation" ) {
-		console.log("Validate deprecation input", data );
-		if ( data.deprecation === undefined )
-		    rejections.push(`'Deprecation Reason' is required`);
-		else if ( typeof data.deprecation !== "string")
-		    rejections.push(`'Deprecation Reason' must be a string`);
-		else if ( data.deprecation.trim() === "" )
-		    rejections.push(`'Deprecation Reason' cannot be blank`);
-
-		return;
-	    }
-
-	    ["name", "description"].forEach( key => {
-		if ( [null, undefined].includes( data[key] ) )
-		    rejections.push(`'${hr_names[key]}' is required`);
-	    });
-
-	    ["name"].forEach( key => {
-		if ( common.isEmpty( data[key] ) )
-		    rejections.push(`'${hr_names[key]}' cannot be blank`);
-	    });
 	},
     },
     "Releases for GUI": {

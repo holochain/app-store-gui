@@ -20,7 +20,8 @@ let openstate;
 
 async function app_state ( datapath, read, writable ) {
     return common.scopedState( openstate, datapath, read, writable, mutable => {
-	mutable.name			= "Testing";
+	mutable.title			= "Testing";
+	mutable.subtitle		= "For tests";
 	mutable.description		= "";
 	mutable.icon			= new Uint8Array([1,2,3]);
 	mutable.publisher		= new holohash.ActionHash( crypto.randomBytes(32) );
@@ -49,7 +50,7 @@ function mvp_tests () {
 	const data			= await openstate.write( datapath );
 
 	expect( data.$id		).to.be.an("ActionHash");
-	expect( data.name		).to.equal("Testing");
+	expect( data.title		).to.equal("Testing");
 	expect( data.editors		).to.have.length( 1 );
 
 	expect( $data.writable		).to.be.true;
@@ -95,7 +96,7 @@ function optional_input_tests () {
 	const data			= await openstate.write( datapath );
 
 	expect( data.$id		).to.be.an("ActionHash");
-	expect( data.name		).to.equal("Testing");
+	expect( data.title		).to.equal("Testing");
 	expect( data.editors		).to.have.length( 2 );
 
 	expect( $data.writable		).to.be.true;
@@ -110,7 +111,7 @@ function invalid_tests () {
 	const [ $data, data$, _,
 		rejections ]		= await app_state( datapath );
 
-	data$.name			= null;
+	data$.title			= null;
 	data$.editors			= [
 	    "not an AgentPubKey",
 	];
