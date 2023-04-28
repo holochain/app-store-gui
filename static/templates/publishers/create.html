@@ -9,7 +9,9 @@
 		<img-src :bytes="publisher$.icon"></img-src>
 
 		<input-file class="position-absolute top-50 start-50 translate-middle"
-			    v-model="publisher$.icon">
+			    accept="image/jpeg, image/png"
+			    v-model="publisher$.icon"
+			    @change="compressIcon()">
 		    <a-icon class="btn-primary">
 			<i class="bi-pencil"></i>
 		    </a-icon>

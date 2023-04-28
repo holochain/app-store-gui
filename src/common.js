@@ -532,7 +532,34 @@ const common				= {
 	else
 	    throw new Error(`Emptiness of type '${typeof value}' cannot be determined`);
     },
-};
 
+    compressImage ( source, options ) {
+	const uid				= common.randomHex();
+
+	log.debug("[%s] Compress image input: %s bytes", uid, (source.length || source.size || 0).toLocaleString() );
+	if ( source instanceof Uint8Array ) {
+	    log.trace("Convert Uint8Array to Blob");
+	    source				= new Blob([ source ], {
+		"type": "image/*",
+	    });
+	}
+
+	return new Promise( (f,r) => {
+	    try {
+		options.success			= async () => {
+		    const arrbuf		= await config.result.arrayBuffer();
+		    config.result		= new Uint8Array( arrbuf );
+		    log.debug("[%s] Compress image output: %s bytes", uid, config.result.length.toLocaleString() );
+		    f( config );
+		};
+		options.error			= r;
+
+		const config			= new Compressor( source, options );
+	    } catch (err) {
+		r( err );
+	    }
+	});
+    },
+};
 
 module.exports = common;

@@ -84,6 +84,7 @@ static-links:\
 	static/dependencies/holo-hash.js\
 	static/dependencies/holo-hash.js.map\
 	static/dependencies/showdown.js\
+	static/dependencies/compressor.js\
 	static/dependencies/vue.js\
 	static/dependencies/vuex.js\
 	static/dependencies/vue-router.js\
@@ -110,6 +111,9 @@ static/dependencies/holo-hash.js:			node_modules/@whi/holo-hash/dist/holo-hash.j
 static/dependencies/showdown.js:			node_modules/showdown/dist/showdown.js Makefile
 	cp $< $@
 	cp $<.map $@.map
+
+static/dependencies/compressor.js:			node_modules/compressorjs/dist/compressor.js Makefile
+	cp $< $@
 
 static/dependencies/vue.js:				node_modules/vue/dist/vue.global.js Makefile
 	cp $< $@

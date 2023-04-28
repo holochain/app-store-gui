@@ -87,6 +87,17 @@ module.exports = async function () {
 			this.$openstate.read( this.gui_release_datapath );
 		    });;
 		},
+		async compressIcon () {
+		    if ( !this.app$.icon )
+			return;
+		    const compressed		= await common.compressImage( this.app$.icon, {
+			"mimeType": "image/jpeg",
+			"maxWidth": 512,
+			"maxHeight": 512,
+			"convertSize": 50_000,
+		    });
+		    this.app$.icon		= compressed.result;
+		},
 		async create () {
 		    console.log("Writing", this.app$ );
 		    await this.$openstate.write( this.datapath );
@@ -298,6 +309,17 @@ module.exports = async function () {
 		setDevHubGUI ( gui_id ) {
 		    this.app$.devhub_address.gui	= gui_id;
 		    this.readDevHubGUI();
+		},
+		async compressIcon () {
+		    if ( !this.new_icon )
+			return;
+		    const compressed		= await common.compressImage( this.new_icon, {
+			"mimeType": "image/jpeg",
+			"maxWidth": 512,
+			"maxHeight": 512,
+			"convertSize": 50_000,
+		    });
+		    this.new_icon		= compressed.result;
 		},
 		async update () {
 		    console.log("Writing", this.app$ );

@@ -20,6 +20,17 @@ module.exports = async function () {
 		...common.scopedPathComputed( c => c.datapath, "publisher" ),
 	    },
 	    "methods": {
+		async compressIcon () {
+		    if ( !this.publisher$.icon )
+			return;
+		    const compressed		= await common.compressImage( this.publisher$.icon, {
+			"mimeType": "image/jpeg",
+			"maxWidth": 512,
+			"maxHeight": 512,
+			"convertSize": 50_000,
+		    });
+		    this.publisher$.icon	= compressed.result;
+		},
 		async create () {
 		    console.log("Writing", this.publisher$ );
 		    await this.$openstate.write( this.datapath );
@@ -116,6 +127,17 @@ module.exports = async function () {
 		});
 	    },
 	    "methods": {
+		async compressIcon () {
+		    if ( !this.new_icon )
+			return;
+		    const compressed		= await common.compressImage( this.new_icon, {
+			"mimeType": "image/jpeg",
+			"maxWidth": 512,
+			"maxHeight": 512,
+			"convertSize": 50_000,
+		    });
+		    this.new_icon		= compressed.result;
+		},
 		async update () {
 		    try {
 			console.log("Writing", this.publisher$ );

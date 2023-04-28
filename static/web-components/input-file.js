@@ -16,6 +16,11 @@ class HTMLInputFileElement extends HTMLElementTemplate {
     // Element constants
 
     static properties			= {
+	"accept": {
+	    async updateDOM () {
+		this.$input.setAttribute("accept", this.accept );
+	    },
+	},
     };
 
     constructor () {
@@ -40,6 +45,9 @@ class HTMLInputFileElement extends HTMLElementTemplate {
 	this.value		= value;
 	const input		= new InputEvent('input');
 	this.dispatchEvent( input );
+
+	const change		= new InputEvent('change');
+	this.dispatchEvent( change );
     }
 
     // Event handlers
@@ -61,7 +69,7 @@ class HTMLInputFileElement extends HTMLElementTemplate {
 	    $this.updateValue( result );
 	};
 	reader.onprogress		= function (p) {
-	    console.log("progress:", p );
+	    // console.log("progress:", p );
 	};
     }
 

@@ -11,8 +11,8 @@
 		<holochain-img v-else :os-path="'appstore/memory/' + publisher.icon"></holochain-img>
 
 		<input-file class="position-absolute top-50 start-50 translate-middle"
-			    accept="image/jpeg, .png"
-			    v-model="new_icon">
+			    accept="image/jpeg, image/png"
+			    v-model="new_icon" @change="compressIcon()">
 		    <a-icon class="btn-primary">
 			<i class="bi-pencil"></i>
 		    </a-icon>
