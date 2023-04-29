@@ -159,7 +159,7 @@ use-npm-openstate:
 $(APPSTORE_WEBHAPP):		web_assets.zip tests/appstore.happ
 	hc web pack -o $@ ./bundled
 	cp $@ ~/
-web_assets.zip:			Makefile static/* static/*/*
+web_assets.zip:			Makefile static/* static/*/* src/* src/*/*
 	make build
 	cd static; zip -r ../web_assets.zip ./*
 

@@ -139,22 +139,15 @@ module.exports = async function () {
 		    this.new_icon		= compressed.result;
 		},
 		async update () {
-		    try {
-			console.log("Writing", this.publisher$ );
-			if ( this.new_icon ) {
-			    log.normal("Creating new icon memory of size %s", this.new_icon.length );
-			    this.publisher$.icon	= await this.createMereMemoryEntry( this.new_icon );
-			    log.info("New icon memory address: %s", this.publisher$.icon );
-			}
-			await this.$openstate.write( this.datapath );
+		    console.log("Writing", this.publisher$ );
+		    if ( this.new_icon )
+			this.publisher$.icon	= this.new_icon;
+		    await this.$openstate.write( this.datapath );
 
-			await this.$openstate.read("publishers");
+		    this.new_icon		= null;
+		    await this.$openstate.read("publishers");
 
-			this.$router.push( "/publishers/" + this.id );
-		    } catch ( err ) {
-			log.error("Failed to update publisher (%s):", String(this.id), err );
-			this.error	= err;
-		    }
+		    this.$router.push( "/publishers/" + this.id );
 		},
 
 		actionErrors () {

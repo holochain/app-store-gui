@@ -323,13 +323,11 @@ module.exports = async function () {
 		},
 		async update () {
 		    console.log("Writing", this.app$ );
-		    if ( this.new_icon ) {
-			log.normal("Creating new icon memory of size %s", this.new_icon.length );
-			this.app$.icon	= await this.createMereMemoryEntry( this.new_icon );
-			log.info("New icon memory address: %s", this.app$.icon );
-		    }
+		    if ( this.new_icon )
+			this.app$.icon		= this.new_icon;
 		    await this.$openstate.write( this.datapath );
 
+		    this.new_icon		= null;
 		    await this.$openstate.read("apps");
 
 		    this.$router.push( "/apps/" + this.id );

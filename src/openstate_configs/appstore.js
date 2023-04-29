@@ -9,6 +9,18 @@ const { HoloHash,
 	DnaHash,
 	AgentPubKey }			= holohash;
 
+
+function is_holohash ( input, type ) {
+    try {
+	let hash			= new HoloHash( input );
+	return type === undefined
+	    ? true
+	    : hash.constructor.name === type;
+    } catch (err) {
+	return false;
+    }
+}
+
 function assert_holohash ( input, type ) {
     let hash			= new HoloHash( input );
     if ( type && hash.constructor.name !== type )
@@ -124,6 +136,15 @@ module.exports				= (appstore, devhub) => ({
 		    "message": changed.deprecation,
 		});
 	    } else {
+		if ( changed.icon && !is_holohash( changed.icon, "EntryHash" ) ) {
+		    log.normal("Creating new icon memory of size %s for publisher %s", changed.icon.length, this.params.id );
+		    const path				= `appstore/memory/${common.randomHex()}`;
+		    this.openstate.mutable[path]	= changed.icon;
+		    changed.icon			= await this.openstate.write( path );
+		    log.info("New icon memory address: %s", changed.icon );
+		    this.openstate.purge( path );
+		}
+
 		resp		= await appstore.call("appstore", "appstore_api", "update_publisher", {
 		    "base": this.state.$action,
 		    "properties": changed,
@@ -180,7 +201,11 @@ module.exports				= (appstore, devhub) => ({
 
 	    if ( data.icon === undefined )
 		rejections.push(`Icon is required`);
-	    else if ( !(data.icon instanceof Uint8Array) ) {
+	    else if ( data.icon instanceof Uint8Array ) {
+		if ( data.icon.length > 204800 )
+		    rejections.push(`Icon is too large. Must be smaller than 200KB (204,800 bytes)`);
+	    }
+	    else {
 		try {
 		    new EntryHash( data.icon );
 		} catch (err) {
@@ -275,6 +300,15 @@ module.exports				= (appstore, devhub) => ({
 		    "message": changed.deprecation,
 		});
 	    } else {
+		if ( changed.icon && !is_holohash( changed.icon, "EntryHash" ) ) {
+		    log.normal("Creating new icon memory of size %s for app %s", changed.icon.length, this.params.id );
+		    const path				= `appstore/memory/${common.randomHex()}`;
+		    this.openstate.mutable[path]	= changed.icon;
+		    changed.icon			= await this.openstate.write( path );
+		    log.info("New icon memory address: %s", changed.icon );
+		    this.openstate.purge( path );
+		}
+
 		resp		= await appstore.call("appstore", "appstore_api", "update_app", {
 		    "base": this.state.$action,
 		    "properties": changed,
@@ -310,7 +344,11 @@ module.exports				= (appstore, devhub) => ({
 
 	    if ( data.icon === undefined )
 		rejections.push(`Icon is required`);
-	    else if ( !(data.icon instanceof Uint8Array) ) {
+	    else if ( data.icon instanceof Uint8Array ) {
+		if ( data.icon.length > 204800 )
+		    rejections.push(`Icon is too large. Must be smaller than 200KB (204,800 bytes)`);
+	    }
+	    else {
 		try {
 		    new EntryHash( data.icon );
 		} catch (err) {

@@ -117,17 +117,4 @@
 	</div>
     </div>
 
-    <notification-bar v-if="$publisher.failed && actionErrors().length" class="text-danger p-2" no-dismiss>
-	<i class="bi-exclamation-triangle-fill"></i>
-	Action Error
-
-	<div slot="details" class="pt-2">
-	    <ul class="list-unstyled text-start d-inline-block">
-		<li v-for="msg in actionErrors()">
-		    <pre v-if="msg.includes('\n')" style="max-width: 100%; overflow-x: auto;">{{ msg }}</pre>
-		    <span v-else>{{ msg }}</span>
-		</li>
-	    </ul>
-	</div>
-    </notification-bar>
 </div>
