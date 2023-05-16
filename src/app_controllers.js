@@ -4,6 +4,7 @@ const log				= new Logger("apps");
 const common				= require('./common.js');
 const { HoloHash,
 	DnaHash,
+	EntryHash,
 	AgentPubKey }			= holohash;
 
 
@@ -13,9 +14,12 @@ module.exports = async function () {
 	    "template": await common.load_html("/templates/apps/create.html"),
 	    "data": function() {
 		return {
-		    "use_official_gui":	true,
-		    "invalid_dna_hash":	null,
 		    "datapath":		`app/${common.randomHex()}`,
+		    "happ_hrl":		null,
+		    "gui_hrl":		null,
+		    "invalid_happ_hrl":	null,
+		    "invalid_gui_hrl":	null,
+		    "use_official_gui":	true,
 		};
 	    },
 	    "computed": {
@@ -49,43 +53,83 @@ module.exports = async function () {
 	    },
 	    "methods": {
 		refreshDevHubPaths () {
-		    if ( this.happ_datapath !== this.$openstate.DEADEND ) {
-			this.$openstate.read( this.happ_datapath ).then( () => {
-			    this.$openstate.read( this.happ_release_datapath );
-			});
-		    }
-		    if ( this.gui_datapath !== this.$openstate.DEADEND ) {
-			this.$openstate.read( this.gui_datapath ).then( () => {
-			    this.$openstate.read( this.gui_release_datapath );
-			});
-		    }
+		    this.readDevHubHapp();
+		    this.readDevHubGUI();
+		},
+		async readDevHubHapp () {
+		    if ( this.happ_datapath === this.$openstate.DEADEND )
+			return;
+
+		    const happ				= await this.$openstate.read( this.happ_datapath );
+
+		    if ( !this.app$.title )
+			this.app$.title		= happ.title;
+		    if ( !this.app$.subtitle )
+			this.app$.subtitle	= happ.subtitle;
+		    if ( !this.app$.description )
+			this.app$.description	= happ.description;
+
+		    await this.$openstate.read( this.happ_release_datapath );
+		},
+		async readDevHubGUI () {
+		    if ( this.gui_datapath === this.$openstate.DEADEND )
+			return;
+
+		    await this.$openstate.read( this.gui_datapath );
+		    await this.$openstate.read( this.gui_release_datapath );
 		},
 		clearErrors () {
 		    this.app_errors.write	= null;
 		},
-		checkDevHubDNA ( dna_hash ) {
-		    try {
-			new DnaHash( dna_hash );
-			this.invalid_dna_hash		= true;
+		handleHappHRL ( hrl ) {
+		    if ( !hrl ) {
+			this.invalid_happ_hrl		= "HRL is required";
+			return;
+		    }
 
-			this.refreshDevHubPaths();
+		    log.info("hApp HRL:", hrl );
+		    try {
+			let [dna_hash, happ_hash]	= common.parseHRL( hrl );
+
+			this.app$.devhub_address.dna	= dna_hash;
+			this.setDevHubHapp( happ_hash );
+			this.invalid_happ_hrl		= false;
 		    } catch (err) {
-			this.invalid_dna_hash		= err.name === "BadPrefixError"
-			    ? `Invalid DNA hash.  A DNA hash will start with "uhC0k" and will be 53 characters long.`
-			    : `Holo Hash Error: [${err.name}] ${err.message}`;
+			this.invalid_happ_hrl		= String(err);
+		    }
+		},
+		handleGUIHRL ( hrl ) {
+		    if ( !hrl ) {
+			this.invalid_gui_hrl		= "HRL is required";
+			return;
+		    }
+
+		    log.info("GUI HRL:", hrl );
+		    try {
+			let [dna_hash, gui_hash]	= common.parseHRL( hrl );
+
+			if ( String(dna_hash) !== String(this.app$.devhub_address.dna) )
+			    throw new Error(`DNA hash from GUI HRL does not match the DNA hash in the hApp HRL`);
+
+			this.setDevHubGUI( gui_hash );
+			this.invalid_gui_hrl		= false;
+		    } catch (err) {
+			this.invalid_gui_hrl		= String(err);
 		    }
 		},
 		setDevHubHapp ( happ_id ) {
 		    this.app$.devhub_address.happ	= happ_id;
-		    this.$openstate.read( this.happ_datapath ).then( happ => {
-			this.$openstate.read( this.happ_release_datapath );
-		    });
+		    this.readDevHubHapp();
 		},
 		setDevHubGUI ( gui_id ) {
 		    this.app$.devhub_address.gui	= gui_id;
-		    this.$openstate.read( this.gui_datapath ).then( happ => {
-			this.$openstate.read( this.gui_release_datapath );
-		    });;
+		    this.readDevHubGUI();
+		},
+		resetDevHubAddress () {
+		    this.app$.devhub_address.happ	= null;
+		    this.app$.devhub_address.gui	= null;
+		    this.gui_hrl			= null;
+		    this.use_official_gui		= true;
 		},
 		async compressIcon () {
 		    if ( !this.app$.icon )
@@ -236,7 +280,10 @@ module.exports = async function () {
 		    id,
 		    "datapath":		`app/${id}`,
 		    "new_icon":		null,
-		    "invalid_dna_hash":	null,
+		    "happ_hrl":		null,
+		    "gui_hrl":		null,
+		    "invalid_happ_hrl":	null,
+		    "invalid_gui_hrl":	null,
 		    "use_official_gui":	true,
 		};
 	    },
@@ -280,6 +327,10 @@ module.exports = async function () {
 		    this.readDevHubGUI();
 	    },
 	    "methods": {
+		refreshDevHubPaths () {
+		    this.readDevHubHapp();
+		    this.readDevHubGUI();
+		},
 		async readDevHubHapp () {
 		    await this.$openstate.read( this.happ_datapath );
 		    await this.$openstate.read( this.happ_release_datapath );
@@ -288,18 +339,40 @@ module.exports = async function () {
 		    await this.$openstate.read( this.gui_datapath );
 		    await this.$openstate.read( this.gui_release_datapath );
 		},
-		checkDevHubDNA ( dna_hash ) {
-		    try {
-			new DnaHash( dna_hash );
-			this.invalid_dna_hash		= true;
+		handleHappHRL ( hrl ) {
+		    if ( !hrl ) {
+			this.invalid_happ_hrl		= "HRL is required";
+			return;
+		    }
 
-			this.$openstate.read( this.happ_datapath ).then( happ => {
-			    this.$openstate.read( this.happ_release_datapath );
-			});
+		    log.info("hApp HRL:", hrl );
+		    try {
+			let [dna_hash, happ_hash]	= common.parseHRL( hrl );
+
+			this.app$.devhub_address.dna	= dna_hash;
+			this.setDevHubHapp( happ_hash );
+			this.invalid_happ_hrl		= false;
 		    } catch (err) {
-			this.invalid_dna_hash		= err.name === "BadPrefixError"
-			    ? `Invalid DNA hash.  A DNA hash will start with "uhC0k" and will be 53 characters long.`
-			    : `Holo Hash Error: [${err.name}] ${err.message}`;
+			this.invalid_happ_hrl		= String(err);
+		    }
+		},
+		handleGUIHRL ( hrl ) {
+		    if ( !hrl ) {
+			this.invalid_gui_hrl		= "HRL is required";
+			return;
+		    }
+
+		    log.info("GUI HRL:", hrl );
+		    try {
+			let [dna_hash, gui_hash]	= common.parseHRL( hrl );
+
+			if ( String(dna_hash) !== String(this.app$.devhub_address.dna) )
+			    throw new Error(`DNA hash from GUI HRL does not match the DNA hash in the hApp HRL`);
+
+			this.setDevHubGUI( gui_hash );
+			this.invalid_gui_hrl		= false;
+		    } catch (err) {
+			this.invalid_gui_hrl		= String(err);
 		    }
 		},
 		setDevHubHapp ( happ_id ) {
@@ -309,6 +382,12 @@ module.exports = async function () {
 		setDevHubGUI ( gui_id ) {
 		    this.app$.devhub_address.gui	= gui_id;
 		    this.readDevHubGUI();
+		},
+		resetDevHubAddress () {
+		    this.app$.devhub_address.happ	= null;
+		    this.app$.devhub_address.gui	= null;
+		    this.gui_hrl			= null;
+		    this.use_official_gui		= true;
 		},
 		async compressIcon () {
 		    if ( !this.new_icon )

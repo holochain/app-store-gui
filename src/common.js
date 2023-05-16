@@ -2,6 +2,8 @@ const { Logger }			= require('@whi/weblogger');
 const log				= new Logger("common");
 
 const { HoloHash,
+	DnaHash,
+	EntryHash,
 	AgentPubKey }			= holohash;
 
 const md_converter			= new showdown.Converter({
@@ -559,6 +561,30 @@ const common				= {
 		r( err );
 	    }
 	});
+    },
+
+    parseHRL ( hrl ) {
+	let [dna_hash, resource_hash]		= hrl.split(":");
+
+	try {
+	    dna_hash				= new DnaHash( dna_hash );
+	} catch (err) {
+	    let message				= err.name === "BadPrefixError"
+		? `HRL has invalid DNA hash.  A DNA hash will start with "uhC0k" and will be 53 characters long.`
+		: `HRL DNA Holo Hash Error: [${err.name}] ${err.message}`;
+	    throw new TypeError(message);
+	}
+
+	try {
+	    resource_hash			= new EntryHash( resource_hash );
+	} catch (err) {
+	    let message				= err.name === "BadPrefixError"
+		? `HRL has invalid Resource hash.  A Resource hash will start with "uhCEk" and will be 53 characters long.`
+		: `HRL Resource Holo Hash Error: [${err.name}] ${err.message}`;
+	    throw new TypeError(message);
+	}
+
+	return [dna_hash, resource_hash];
     },
 };
 
