@@ -39,6 +39,7 @@ module.exports = async function () {
 		    this.$openstate.purge( this.datapath );
 
 		    await this.$openstate.read("publishers");
+		    await this.$openstate.read("agent/me/publishers");
 
 		    this.$router.push( "/publishers/" + new_id );
 		},
