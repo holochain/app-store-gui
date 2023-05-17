@@ -131,6 +131,9 @@ class IdenticonContainer extends LitElement {
 	if ( !(this.offsetWidth && this.offsetHeight) )
 	    return html`Invisible`;
 
+	if ( !this.seed )
+	    return html`<slot></slot>`;
+
 	const identicon			= Identicons.renderDiscs({
 	    "seed": this.seed,
 	    "width": this.offsetWidth,

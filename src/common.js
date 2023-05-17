@@ -138,6 +138,24 @@ const common				= {
 	return true;
     },
 
+    equalUint8Arrays ( base, ...arrays ) {
+	// Quick check for different array lengths
+	for ( let arr of arrays ) {
+	    if ( arr.length !== base.length )
+		return false;
+	}
+
+	// We know they are all the same length now
+	for ( let i=0; i < base.length; i++ ) {
+	    for ( let arr of arrays ) {
+		if ( arr[i] !== base[i] )
+		    return false;
+	    }
+	}
+
+	return true;
+    },
+
     hashesAreEqual ( hash1, hash2 ) {
 	if ( hash1 instanceof Uint8Array )
 	    hash1		= new HoloHash( hash1 )

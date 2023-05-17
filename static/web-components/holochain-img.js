@@ -63,6 +63,11 @@ class HTMLHolochainImgElement extends HTMLElementTemplate {
 		this.$img.style.display		= "initial";
 	    },
 	},
+	"mime-type": {
+	    async updateDOM () {
+		this.$img.setAttribute( "mime-type", this['mime-type'] );
+	    },
+	},
     };
 
     constructor () {

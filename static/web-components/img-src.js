@@ -23,12 +23,23 @@ img {
 	"bytes":{
 	    "reflect": false,
 	    updateDOM () {
-		this.$img.src		= URL.createObjectURL(
-		    new Blob([this.bytes], { type: 'image/png' })
-		);
+		this.updateSource();
+	    },
+	},
+	"mime-type": {
+	    updateDOM () {
+		this.updateSource();
 	    },
 	},
     };
+
+    updateSource () {
+	this.$img.src			= URL.createObjectURL(
+	    new Blob([this.bytes], {
+		"type": this['mime-type'] || 'image/png',
+	    })
+	);
+    }
 
     attributeCallback ( name, _, value ) {
 	if ( !["width", "height", "alt", "title"].includes( name ) )

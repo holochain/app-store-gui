@@ -23,6 +23,14 @@ module.exports = async function () {
 		async compressIcon () {
 		    if ( !this.publisher$.icon )
 			return;
+
+		    if ( this.publisher$.icon.file.name.endsWith(".svg") ) {
+			this.publisher$.metadata.icon_mime_type = "image/svg+xml";
+			return;
+		    }
+
+		    delete this.publisher$.metadata.icon_mime_type;
+
 		    const compressed		= await common.compressImage( this.publisher$.icon, {
 			"mimeType": "image/jpeg",
 			"maxWidth": 512,
@@ -131,6 +139,10 @@ module.exports = async function () {
 		async compressIcon () {
 		    if ( !this.new_icon )
 			return;
+
+		    if ( this.new_icon.file?.name.endsWith(".svg") )
+			return;
+
 		    const compressed		= await common.compressImage( this.new_icon, {
 			"mimeType": "image/jpeg",
 			"maxWidth": 512,
@@ -141,8 +153,18 @@ module.exports = async function () {
 		},
 		async update () {
 		    console.log("Writing", this.publisher$ );
-		    if ( this.new_icon )
+
+		    let current_icon_bytes	= this.$openstate.state[`appstore/memory/${this.publisher$.icon}`];
+		    if ( this.new_icon &&
+			 !common.equalUint8Arrays( this.new_icon, current_icon_bytes ) ) {
 			this.publisher$.icon	= this.new_icon;
+
+			if ( this.new_icon.file?.name.endsWith(".svg") )
+			    this.publisher$.metadata.icon_mime_type = "image/svg+xml";
+			else
+			    delete this.publisher$.metadata.icon_mime_type;
+		    }
+
 		    await this.$openstate.write( this.datapath );
 
 		    this.new_icon		= null;

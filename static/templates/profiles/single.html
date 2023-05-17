@@ -1,17 +1,11 @@
 <div v-if="agent">
-    <identicon-container :seed="agent"
-			 id="header"
-			 class="mb-5 d-flex flex-column-reverse align-items-center exhibit"
-			 style="width: 100%; height: 400px;">
-	<div class="container my-2 position-relative">
-	    <div class="rounded-circle border border-2 border-white position-absolute overflow-hidden"
-		 style="bottom: -100px; left: -330px; width: 300px; height: 300px; background-color: #808080;">
-		<identicon-img size="300" color :seed="agent"></identicon-img>
-	    </div>
+    <layout-banner :seed="agent" class="pb-5">
+	<h2 id="page-title">{{ agent }}</h2>
 
-	    <h2 id="page-title">{{ agent }}</h2>
+	<div slot="spotlight">
+	    <identicon-img size="300" color :seed="agent"></identicon-img>
 	</div>
-    </identicon-container>
+    </layout-banner>
 
     <div class="container my-4">
 	<div class="d-flex align-items-center">
@@ -30,7 +24,8 @@
 		<div class="data-box my-2 d-flex align-items-center gutters gx-2">
 		    <div class="rounded-circle overflow-hidden"
 			 style="width: 50px; height: 50px;">
-			<holochain-img :os-path="'appstore/memory/' + publisher.icon"></holochain-img>
+			<holochain-img :os-path="'appstore/memory/' + publisher.icon"
+				       :mime-type="publisher.metadata.icon_mime_type"></holochain-img>
 		    </div>
 		    <span class="flex-grow-1">{{ publisher.name }}</span>
 		</div>
@@ -55,7 +50,8 @@
 		<div class="data-box my-2 d-flex align-items-center gutters gx-2">
 		    <div class="rounded-circle overflow-hidden"
 			 style="width: 50px; height: 50px;">
-			<holochain-img :os-path="'appstore/memory/' + app.icon"></holochain-img>
+			<holochain-img :os-path="'appstore/memory/' + app.icon"
+				       :mime-type="app.metadata.icon_mime_type"></holochain-img>
 		    </div>
 		    <span class="flex-grow-1">{{ app.title }}: <em>{{ app.subtitle }}</em></span>
 		</div>

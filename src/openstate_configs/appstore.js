@@ -116,6 +116,7 @@ module.exports				= (appstore, devhub) => ({
 		    "context": "Website",
 		},
 		"editors": [],
+		"metadata": {},
 	    };
 	},
 	async create ( input ) {
@@ -125,8 +126,8 @@ module.exports				= (appstore, devhub) => ({
 
 	    return publisher;
 	},
-	toMutable ({ name, location, website, email, icon }) {
-	    return { name, location, website, email, icon };
+	toMutable ({ name, description, location, website, email, icon, metadata }) {
+	    return { name, description, location, website, email, icon, metadata };
 	},
 	async update ({ id }, changed, intent ) {
 	    let resp;
@@ -168,6 +169,7 @@ module.exports				= (appstore, devhub) => ({
 	    },
 	},
 	validation ( data, rejections, intent ) {
+	    console.log("Validating data for %s:", intent, data );
 	    if ( intent === "deprecation" ) {
 		if ( data.deprecation === undefined )
 		    rejections.push(`'Deprecation Reason' is required`);
@@ -178,24 +180,24 @@ module.exports				= (appstore, devhub) => ({
 		return;
 	    }
 
-	    if ( typeof data.name !== "string" )
+	    if ( typeof data.name !== "string" || data.name.trim() === "" )
 		rejections.push(`Name is required`);
 
 	    if ( !data.location )
 		rejections.push(`Location is required`);
 	    else {
-		if ( typeof data.location.country !== "string" )
+		if ( typeof data.location.country !== "string" || data.location.country.trim() === "" )
 		    rejections.push(`Country is required`);
-		if ( typeof data.location.region !== "string" )
+		if ( typeof data.location.region !== "string" || data.location.region.trim() === "" )
 		    rejections.push(`Region is required`);
-		if ( typeof data.location.city !== "string" )
+		if ( typeof data.location.city !== "string" || data.location.city.trim() === "" )
 		    rejections.push(`City is required`);
 	    }
 
 	    if ( !data.website )
 		rejections.push(`Website is required`);
 	    else {
-		if ( typeof data.website.url !== "string" )
+		if ( typeof data.website?.url !== "string" || data.website.url.trim() === "" )
 		    rejections.push(`Website is required`);
 	    }
 
@@ -272,6 +274,7 @@ module.exports				= (appstore, devhub) => ({
 		    "gui": null,
 		},
 		"editors": [],
+		"metadata": {},
 	    };
 	},
 	async create ( input ) {
@@ -281,7 +284,7 @@ module.exports				= (appstore, devhub) => ({
 
 	    return app;
 	},
-	toMutable ({ title, subtitle, description, icon, publisher, devhub_address }) {
+	toMutable ({ title, subtitle, description, icon, publisher, devhub_address, metadata }) {
 	    return {
 		title, subtitle, description, icon,
 		"publisher":	String( publisher ),
@@ -290,6 +293,7 @@ module.exports				= (appstore, devhub) => ({
 		    "happ":	String( devhub_address.happ ),
 		    "gui":	devhub_address.gui ? String( devhub_address.gui ) : devhub_address.gui,
 		},
+		metadata,
 	    };
 	},
 	async update ({ id }, changed, intent ) {
@@ -619,12 +623,18 @@ module.exports				= (appstore, devhub) => ({
 	async read ({ dna, id }) {
 	    const releases		= await this.openstate.read(`${dna}/happ/${id}/releases`);
 
+	    console.log( releases );
 	    return releases.reduce( (acc, release, i) => {
 		if ( acc === null )
 		    return release;
 
-		if ( release.release > acc.release )
-		    return release;
+		if ( isNaN(release.version) || isNaN(acc.version) ) {
+		    if ( release.last_updated > acc.last_updated )
+			return release;
+		} else {
+		    if ( release.version > acc.version )
+			return release;
+		}
 
 		return acc;
 	    }, null );
@@ -685,8 +695,13 @@ module.exports				= (appstore, devhub) => ({
 		if ( acc === null )
 		    return release;
 
-		if ( release.release > acc.release )
-		    return release;
+		if ( isNaN(release.version) || isNaN(acc.version) ) {
+		    if ( release.last_updated > acc.last_updated )
+			return release;
+		} else {
+		    if ( release.version > acc.version )
+			return release;
+		}
 
 		return acc;
 	    }, null );

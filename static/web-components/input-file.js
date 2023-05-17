@@ -66,6 +66,7 @@ class HTMLInputFileElement extends HTMLElementTemplate {
 	};
 	reader.onload		= function (evt) {
 	    let result		= new Uint8Array( evt.target.result );
+	    result.file		= file;
 	    $this.updateValue( result );
 	};
 	reader.onprogress		= function (p) {
