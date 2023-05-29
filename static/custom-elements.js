@@ -81,7 +81,7 @@ class IdenticonImg extends LitElement {
 	return html`
 <style>${dynamic_css}</style>
 
-<img class="identicon" title="Click to copy hash" src=${identicon.dataURL} @click=${this.copyToClipboard}>
+<img class="identicon" src=${identicon.dataURL} @click=${this.copyToClipboard}>
 `;
     }
 }
