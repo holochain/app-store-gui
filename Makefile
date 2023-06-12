@@ -11,7 +11,7 @@ HAPPS			= $(APPSTORE_HAPP) $(DEVHUB_HAPP)
 #
 # Runtime Setup
 #
-run-holochain:
+run-holochain:		node_modules
 	npx holochain-backdrop --admin-port 35678 --config holochain/config.yaml -v
 reset-holochain:
 	rm -rf holochain/databases holochain/config.yaml tests/*_HASH
@@ -75,7 +75,7 @@ dist:				static-links static/dist/webpacked.app.js
 static/dist/webpacked.app.js:	node_modules webpack.config.js Makefile
 	make build
 	touch $@
-static-links:\
+static-links:		node_modules\
 	static/dependencies\
 	static/dependencies/identicons.bundled.js\
 	static/dependencies/holochain-client/holochain-client.js\

@@ -17,7 +17,7 @@
   "dependencies": {
     "@babel/runtime": "^7.20.6",
     "@purewc/select-search": "^0.1.1",
-    "@purewc/template": "^0.2.2",
+    "@purewc/template": "^0.2.3",
     "@tauri-apps/api": "^1.2.0",
     "@whi/crux-payload-parser": "^0.3.2",
     "@whi/holo-hash": "^0.3.0",
