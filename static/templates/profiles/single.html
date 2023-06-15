@@ -18,6 +18,11 @@
 	    </router-link>
 	</div>
 
+	<div v-if="publishers?.length === 0"
+	     class="card m-2 p-2 text-center text-secondary">
+	    You do not have any associated publishers yet
+	</div>
+
 	<div v-for="publisher in publishers">
 	    <router-link class="transparent"
 			 :to="'/publishers/' + publisher.$id">
@@ -42,6 +47,11 @@
 		    <i class="bi-plus-lg"></i>
 		</a-icon>
 	    </router-link>
+	</div>
+
+	<div v-if="apps?.length === 0"
+	     class="card m-2 p-2 text-center text-secondary">
+	    You do not have any associated apps yet
 	</div>
 
 	<div v-for="app in apps">
