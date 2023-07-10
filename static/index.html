@@ -56,6 +56,11 @@
 	<script src="/dependencies/holo-hash.js"></script>
 	<script src="/dependencies/showdown.js"></script>
 	<script src="/dependencies/compressor.js"></script>
+	<script src="/dependencies/msgpack.js"></script>
+	<script type="module">
+	    import pako from './dependencies/pako.js';
+	    Object.assign( window, { pako });
+	</script>
 
 
 	<!-- ####################

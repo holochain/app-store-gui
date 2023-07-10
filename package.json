@@ -16,6 +16,7 @@
   "homepage": "https://github.com/holochain/appstore#readme",
   "dependencies": {
     "@babel/runtime": "^7.20.6",
+    "@msgpack/msgpack": "^3.0.0-beta2",
     "@purewc/select-search": "^0.1.1",
     "@purewc/template": "^0.2.3",
     "@tauri-apps/api": "^1.2.0",
@@ -27,6 +28,7 @@
     "@whi/weblogger": "^0.1.5",
     "compressorjs": "^1.2.1",
     "openstate": "^0.2.2",
+    "pako": "^2.1.0",
     "showdown": "^2.1.0",
     "vue": "^3.2.45",
     "vue-router": "^4.1.6",

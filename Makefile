@@ -27,7 +27,7 @@ $(DEVHUB_HAPP):
 $(APPSTORE_HAPP):
 	$(error Download missing hApp into location ./$@)
 copy-devhub-from-local:
-	cp ../app-store-dnas/tests/devhub.happ $(DEVHUB_HAPP)
+	cp ../devhub-dnas/devhub.happ $(DEVHUB_HAPP)
 copy-appstore-from-local:
 	cp ../app-store-dnas/appstore.happ $(APPSTORE_HAPP)
 
@@ -85,6 +85,8 @@ static-links:		node_modules\
 	static/dependencies/holo-hash.js.map\
 	static/dependencies/showdown.js\
 	static/dependencies/compressor.js\
+	static/dependencies/pako.js\
+	static/dependencies/msgpack.js\
 	static/dependencies/vue.js\
 	static/dependencies/vuex.js\
 	static/dependencies/vue-router.js\
@@ -114,6 +116,13 @@ static/dependencies/showdown.js:			node_modules/showdown/dist/showdown.js Makefi
 
 static/dependencies/compressor.js:			node_modules/compressorjs/dist/compressor.js Makefile
 	cp $< $@
+
+static/dependencies/pako.js:				node_modules/pako/dist/pako.esm.mjs Makefile
+	cp $< $@
+
+static/dependencies/msgpack.js:				node_modules/@msgpack/msgpack/dist.es5+umd/msgpack.js Makefile
+	cp $< $@
+	cp $<.map $@.map
 
 static/dependencies/vue.js:				node_modules/vue/dist/vue.global.js Makefile
 	cp $< $@

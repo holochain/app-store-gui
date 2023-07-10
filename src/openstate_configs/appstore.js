@@ -27,6 +27,27 @@ function assert_holohash ( input, type ) {
 	throw new TypeError(`Wrong HoloHash type '${hash.constructor.name}'; expected '${type}'`);
 }
 
+async function downloadMemory ( devhub, dna_hash, address, dna_name ) {
+    let memory				= await devhub.call( dna_hash, "happ_library", `${dna_name}_get_memory`, address );
+
+    const bytes				= new Uint8Array( memory.memory_size );
+
+    const blocks			= await Promise.all(
+	memory.block_addresses.map( async block_addr => {
+	    return await devhub.call( dna_hash, "happ_library", `${dna_name}_get_memory_block`, block_addr );
+	})
+    );
+
+    let index				= 0;
+    for ( let block of blocks ) {
+	bytes.set( block.bytes, index );
+	index			       += block.bytes.length;
+    }
+
+    return bytes;
+}
+
+
 module.exports				= (appstore, devhub) => ({
     "Agent": {
 	"path": "agent/:id",
@@ -508,15 +529,20 @@ module.exports				= (appstore, devhub) => ({
 	"path": "app/:id/package",
 	"readonly": true,
 	async read ({ id }) {
+	    const start_time			= Date.now();
 	    const app				= await this.openstate.get(`app/${id}`);
+	    console.log("App:", app );
+	    const dna_id			= app.devhub_address.dna;
+	    const gui_id			= app.devhub_address.gui;
+	    const happ_id			= app.devhub_address.happ;
 
 	    const happ_releases			= await devhub.call( app.devhub_address.dna, "happ_library", "get_happ_releases", {
-		"for_happ": app.devhub_address.happ,
+		"for_happ": happ_id,
 	    }, 10_000 );
 
 	    if ( happ_releases.length === 0 ) {
-		const happ			= await devhub.call( app.devhub_address.dna, "happ_library", "get_happ", {
-		    "id": app.devhub_address.happ,
+		const happ			= await devhub.call( dna_id, "happ_library", "get_happ", {
+		    "id": happ_id,
 		}, 10_000 );
 
 		throw new Error(`There are no releases for hApp ${happ.title} (${happ.$id})`);
@@ -524,36 +550,120 @@ module.exports				= (appstore, devhub) => ({
 
 	    const latest_happ_release		= happ_releases[0];
 
-	    if ( !(app.devhub_address.gui || latest_happ_release.official_gui) )
+	    console.log("Latest hApp Release:", latest_happ_release );
+	    if ( !(gui_id || latest_happ_release.official_gui) )
 		throw new Error(`No Official GUI for hApp Release '${latest_happ_release.version}' (${latest_happ_release.$id})`);
 
+	    let gui_release;
 	    let gui_release_id;
-	    if ( app.devhub_address.gui ) {
-		const gui_releases		= await devhub.call( app.devhub_address.dna, "happ_library", "get_gui_releases", {
-		    "for_gui": app.devhub_address.gui,
-		}, 10_000 );
 
-		if ( gui_releases.length === 0 ) {
-		    const gui			= await devhub.call( app.devhub_address.dna, "happ_library", "get_gui", {
-			"id": gui_id,
-		    }, 10_000 );
+	    if ( gui_id ) {
+		gui_release			= await this.openstate.get(`${dna_id}/gui/${gui_id}/releases/latest`);
+		console.log("Latest GUI Release:", gui_release );
 
-		    throw new Error(`There are no releases for GUI '${gui.name}' (${gui.$id})`);
-		}
+		if ( gui_release === null )
+		    throw new Error(`There are no releases for GUI '${gui_id}'`);
 
-		gui_release_id			= gui_releases[0].$id;
+		gui_release_id			= gui_release.$id;
 	    }
 	    else {
-		gui_release_id			= latest_happ_release.official_gui;
+		gui_release_id			= new EntryHash( latest_happ_release.official_gui );
+		console.log("Official GUI Release ID: %s", gui_release_id );
+		gui_release			= await devhub.call( dna_id, "happ_library", "get_gui_release", {
+		    "id": gui_release_id,
+		});
 	    }
 
-	    const bytes				= await devhub.call( app.devhub_address.dna, "happ_library", "get_webhapp_package", {
-		"name": app.title,
-		"happ_release_id": latest_happ_release.$id,
-		"gui_release_id": gui_release_id,
-	    }, 60_000 );
+	    console.log("GUI Release:", gui_release );
+	    const file				= await devhub.call( dna_id, "happ_library", "get_webasset_file", {
+		"id": gui_release.web_asset_id,
+	    });
+	    const ui_bytes_p			= downloadMemory( devhub, dna_id, file.mere_memory_addr, "web_assets" );
+	    const happ_bundle_p			= this.openstate.get(`app/${id}/happ/package`, { rememberState: false });
 
-	    return new Uint8Array( bytes );
+	    const [ui_bytes, happ_bytes]	= await Promise.all([
+		// Get GUI file
+		ui_bytes_p,
+		// Get hApp bundle
+		happ_bundle_p,
+	    ]);
+
+	    const webhapp_config		= {
+		"manifest": {
+		    "manifest_version": "1",
+		    "name": `${app.title} - ${latest_happ_release.version}`,
+		    "ui": {
+			"bundled": "ui.zip"
+		    },
+		    "happ_manifest": {
+			"bundled": "bundled.happ"
+		    }
+		},
+		"resources": {
+		    "ui.zip":		ui_bytes,
+		    "bundled.happ":	happ_bytes,
+		},
+	    };
+
+	    const msgpacked_bytes	= MessagePack.encode( webhapp_config );
+	    const webhapp_bytes		= pako.gzip( msgpacked_bytes );
+
+	    const duration		= Date.now() - start_time;
+	    log.debug("%ss to fetch Webhapp %s WASM", duration/1000, id );
+	    return webhapp_bytes;
+	},
+    },
+    "GUI Package": {
+	"path": "app/:id/gui/package",
+	"readonly": true,
+	async read ({ id }) {
+	},
+    },
+    "hApp Package": {
+	"path": "app/:id/happ/package",
+	"readonly": true,
+	async read ({ id }) {
+	    const start_time	= Date.now();
+	    const app			= await this.openstate.get(`app/${id}`);
+
+	    const happ_releases		= await devhub.call( app.devhub_address.dna, "happ_library", "get_happ_releases", {
+		"for_happ": app.devhub_address.happ,
+	    }, 10_000 );
+
+	    if ( happ_releases.length === 0 ) {
+		const happ		= await devhub.call( app.devhub_address.dna, "happ_library", "get_happ", {
+		    "id": app.devhub_address.happ,
+		}, 10_000 );
+
+		throw new Error(`There are no releases for hApp ${happ.title} (${happ.$id})`);
+	    }
+
+	    const latest_happ_release	= happ_releases[0];
+
+	    const manifest		= JSON.parse( JSON.stringify( latest_happ_release.manifest ) )
+	    const resources		= {};
+
+	    await Promise.all(
+		latest_happ_release.dnas.map( async (dna_ref, i) => {
+		    const role		= manifest.roles[i];
+		    const id		= new EntryHash( dna_ref.version );
+		    const dna_bytes	= await this.openstate.read(`${app.devhub_address.dna}/dnarepo/dna/${id}/package/${dna_ref.role_name}`, { rememberState: false });
+		    const rpath		= `${dna_ref.role_name}.dna`;
+
+		    resources[ rpath ]	= dna_bytes;
+		    role.dna.bundled	= rpath;
+		})
+	    );
+
+	    const happ_config		= {
+		manifest,
+		resources,
+	    };
+	    const happ_bytes		= pako.gzip( MessagePack.encode( happ_config ) );
+
+	    const duration		= Date.now() - start_time;
+	    log.debug("%ss to fetch hApp bundle %s", duration/1000, id );
+	    return happ_bytes;
 	},
     },
     "App Store - Mere Memory": {
@@ -705,6 +815,101 @@ module.exports				= (appstore, devhub) => ({
 
 		return acc;
 	    }, null );
+	},
+    },
+
+    "hApp Release": {
+	"path": ":dna/happ/release/:id",
+	"readonly": true,
+	async read ({ dna, id }, opts ) {
+	    return await devhub.call( dna, "happ_library", "get_happ_release", { id });
+	},
+    },
+    "DNA Version": {
+	"path": ":dna/dna/version/:id",
+	"readonly": true,
+	async read ({ dna, id }, opts ) {
+	    return await devhub.call( dna, "happ_library", "get_dna_version", { id });
+	},
+    },
+    "DNArepo Memory": {
+	"path": ":dna/dnarepo/memory/:addr",
+	"readonly": true,
+	async read ({ dna, addr }, opts ) {
+	    const start_time		= Date.now();
+	    const bytes			= await downloadMemory( devhub, dna, addr, "dnarepo" );
+
+	    const duration		= Date.now() - start_time;
+	    log.debug("%ss to fetch 'dnarepo' memory %s", duration/1000, addr );
+
+	    return bytes;
+	},
+    },
+    "DNA Package": {
+	"path": ":dna/dnarepo/dna/:id/package/:name",
+	"readonly": true,
+	async read ({ dna, id, name }) {
+	    const start_time		= Date.now();
+	    const resources		= {};
+	    const integrity_zomes	= [];
+	    const coordinator_zomes	= [];
+	    const dna_version		= await devhub.call( dna, "happ_library", "get_dna_version", { id });
+
+	    await Promise.all([
+		...dna_version.integrity_zomes.map( async zome_ref => {
+		    const rpath		= `${zome_ref.name}.wasm`;
+		    const mm_addr	= new EntryHash( zome_ref.resource );
+		    const wasm_bytes	= await this.openstate.read(`${dna}/dnarepo/memory/${mm_addr}`, { rememberState: false });
+		    log.info("Zome %s wasm bytes: %s", zome_ref.name, wasm_bytes.length );
+
+		    integrity_zomes.push({
+			"name": zome_ref.name,
+			"bundled": rpath,
+			"hash": null,
+		    });
+		    resources[ rpath ]	= wasm_bytes;
+		}),
+		...dna_version.zomes.map( async zome_ref => {
+		    const rpath		= `${zome_ref.name}.wasm`;
+		    const mm_addr	= new EntryHash( zome_ref.resource );
+		    const wasm_bytes	= await this.openstate.read(`${dna}/dnarepo/memory/${mm_addr}`, { rememberState: false });
+		    log.info("Zome %s wasm bytes: %s", zome_ref.name, wasm_bytes.length );
+
+		    coordinator_zomes.push({
+			"name": zome_ref.name,
+			"bundled": rpath,
+			"hash": null,
+			"dependencies": zome_ref.dependencies.map( name => {
+			    return { name };
+			}),
+		    });
+		    resources[ rpath ]	= wasm_bytes;
+		}),
+	    ]);
+
+	    const dna_config		= {
+		"manifest": {
+		    "manifest_version": "1",
+		    "name": name,
+		    "integrity": {
+			"origin_time": dna_version.origin_time,
+			"network_seed": dna_version.network_seed,
+			"properties": dna_version.properties,
+			"zomes": integrity_zomes,
+		    },
+		    "coordinator": {
+			"zomes": coordinator_zomes,
+		    },
+		},
+		resources,
+	    };
+
+	    const msgpacked_bytes	= MessagePack.encode( dna_config );
+	    const gzipped_bytes		= pako.gzip( msgpacked_bytes );
+
+	    const duration		= Date.now() - start_time;
+	    log.debug("%ss to fetch DNA bundle %s", duration/1000, id );
+	    return gzipped_bytes;
 	},
     },
 });
