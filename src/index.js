@@ -85,6 +85,10 @@ async function setup_clients() {
 
 (async function(global) {
     const [appstore]			= await setup_clients();
+
+    log.warn("Pre-load WASMs with 30s timeout");
+    await appstore.call("appstore", "appstore_api", "whoami", null, 30_000 );
+
     const openstate			= await openstate_init([ appstore ]);
     const generic_controllers		= await generics_init();
     const publisher_controllers		= await publishers_init();
