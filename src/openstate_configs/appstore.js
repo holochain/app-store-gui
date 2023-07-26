@@ -278,10 +278,10 @@ module.exports				= (appstore, devhub) => ({
 	    entity.publisher			= new ActionHash( entity.publisher );
 
 	    entity.devhub_address.dna		= new DnaHash( entity.devhub_address.dna );
-	    entity.devhub_address.happ		= new EntryHash( entity.devhub_address.happ );
+	    entity.devhub_address.happ		= new ActionHash( entity.devhub_address.happ );
 
 	    if ( entity.devhub_address.gui )
-		entity.devhub_address.gui	= new EntryHash( entity.devhub_address.gui );
+		entity.devhub_address.gui	= new ActionHash( entity.devhub_address.gui );
 
 	    for ( let i in entity.editors )
 		entity.editors[ i ]		= new AgentPubKey( entity.editors[i] );
@@ -567,7 +567,7 @@ module.exports				= (appstore, devhub) => ({
 		gui_release_id			= gui_release.$id;
 	    }
 	    else {
-		gui_release_id			= new EntryHash( latest_happ_release.official_gui );
+		gui_release_id			= new ActionHash( latest_happ_release.official_gui );
 		console.log("Official GUI Release ID: %s", gui_release_id );
 		gui_release			= await devhub.call( dna_id, "happ_library", "get_gui_release", {
 		    "id": gui_release_id,
@@ -646,7 +646,7 @@ module.exports				= (appstore, devhub) => ({
 	    await Promise.all(
 		latest_happ_release.dnas.map( async (dna_ref, i) => {
 		    const role		= manifest.roles[i];
-		    const id		= new EntryHash( dna_ref.version );
+		    const id		= new ActionHash( dna_ref.version );
 		    const dna_bytes	= await this.openstate.read(`${app.devhub_address.dna}/dnarepo/dna/${id}/package/${dna_ref.role_name}`, { rememberState: false });
 		    const rpath		= `${dna_ref.role_name}.dna`;
 
@@ -689,7 +689,7 @@ module.exports				= (appstore, devhub) => ({
 	"path": ":dna/happ/:id",
 	async read ({ dna, id }) {
 	    assert_holohash( dna, "DnaHash" );
-	    assert_holohash( id, "EntryHash" );
+	    assert_holohash( id, "ActionHash" );
 
 	    try {
 		return await devhub.call( dna , "happ_library", "get_happ", { id });
@@ -718,7 +718,7 @@ module.exports				= (appstore, devhub) => ({
 	"readonly": true,
 	async read ({ dna, id }) {
 	    assert_holohash( dna, "DnaHash" );
-	    assert_holohash( id, "EntryHash" );
+	    assert_holohash( id, "ActionHash" );
 
 	    const list		= await devhub.call( dna, "happ_library", "get_happ_releases", {
 		"for_happ": id,
@@ -754,7 +754,7 @@ module.exports				= (appstore, devhub) => ({
 	"path": ":dna/gui/:id",
 	async read ({ dna, id }) {
 	    assert_holohash( dna, "DnaHash" );
-	    assert_holohash( id, "EntryHash" );
+	    assert_holohash( id, "ActionHash" );
 
 	    try {
 		return await devhub.call( dna, "happ_library", "get_gui", { id });
@@ -786,7 +786,7 @@ module.exports				= (appstore, devhub) => ({
 	"readonly": true,
 	async read ({ dna, id }) {
 	    assert_holohash( dna, "DnaHash" );
-	    assert_holohash( id, "EntryHash" );
+	    assert_holohash( id, "ActionHash" );
 
 	    const list		= await devhub.call( dna, "happ_library", "get_gui_releases", {
 		"for_gui": id,

@@ -3,7 +3,7 @@ const log				= new Logger("common");
 
 const { HoloHash,
 	DnaHash,
-	EntryHash,
+	ActionHash, EntryHash,
 	AgentPubKey }			= holohash;
 
 const md_converter			= new showdown.Converter({
@@ -594,7 +594,7 @@ const common				= {
 	}
 
 	try {
-	    resource_hash			= new EntryHash( resource_hash );
+	    resource_hash			= new ActionHash( resource_hash );
 	} catch (err) {
 	    let message				= err.name === "BadPrefixError"
 		? `HRL has invalid Resource hash.  A Resource hash will start with "uhCEk" and will be 53 characters long.`
