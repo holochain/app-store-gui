@@ -24,8 +24,8 @@ setup:			$(HAPPS)
 
 $(DEVHUB_HAPP):
 	$(error Download missing hApp into location ./$@)
-$(APPSTORE_HAPP):
-	$(error Download missing hApp into location ./$@)
+$(APPSTORE_HAPP):	../app-store-dnas/appstore.happ
+	cp $< $@
 copy-devhub-from-local:
 	cp ../devhub-dnas/DevHub.happ $(DEVHUB_HAPP)
 copy-appstore-from-local:
