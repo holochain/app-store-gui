@@ -49,6 +49,11 @@ test-e2e-crud-publishers:	node_modules $(HAPPS)
 test-e2e-crud-app:		node_modules $(HAPPS)
 	LOG_LEVEL=silly npx mocha -t 5000 tests/e2e/test_app_crud.js
 
+user-testing-setup:
+	node ../devhub-gui/tests/create_devhub_assets.js devhub-bobby
+	node create_viewpoint.js $$(cat ./tests/AGENT)
+	node tests/setup.js app-store andie
+	make build-watch
 
 #
 # HTTP Server

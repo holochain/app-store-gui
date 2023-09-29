@@ -20,9 +20,11 @@ module.exports = async function () {
 	    },
 	    "computed": {
 		...common.scopedPathComputed( `apps`, "apps" ),
+		...common.scopedPathComputed( `apps/removed`, "removed_apps" ),
 	    },
 	    "methods": {
 		async refresh () {
+		    this.$openstate.read( "apps/removed" );
 		    await this.$openstate.read( "apps" );
 		},
 	    },

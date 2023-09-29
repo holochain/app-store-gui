@@ -75,6 +75,7 @@
 	<!-- Font -->
 	<link rel="stylesheet" href="googlefonts/mulish.css">
 	<!-- Custom CSS -->
+	<link rel="stylesheet" href="css/custom.css">
 	<link rel="stylesheet" href="css/devhub.css">
     </head>
     <body>
@@ -91,6 +92,9 @@
 		<div class="col-auto">
 		    <div class="d-flex align-items-center gutters gx-4">
 			<!-- <a class="btn btn-link">DevHub</a> -->
+			<router-link v-if="isViewpointAdmin()"
+				     class="btn btn-secondary"
+				     to="/admin">Admin Dashboard</router-link>
 			<router-link class="btn btn-primary"
 				     to="/apps/new">Add App</router-link>
 			<router-link class="btn btn-primary"

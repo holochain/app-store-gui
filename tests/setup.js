@@ -16,9 +16,11 @@ if ( process.env.LOG_LEVEL )
 
 const APPSTORE_HAPP			= path.resolve( __dirname, "appstore.happ" );
 const DEVHUB_HAPP			= path.resolve( __dirname, "devhub.happ" );
+// const APPSTORE_DEVHUB_HAPP		= path.resolve( __dirname, "appstore-devhub.happ" );
 const HAPPS				= {
     "app-store":	APPSTORE_HAPP,
     "devhub":		DEVHUB_HAPP,
+    // "app-store":	APPSTORE_DEVHUB_HAPP,
 };
 
 const PORT				= 35678;

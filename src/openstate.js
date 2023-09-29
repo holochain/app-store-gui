@@ -27,8 +27,11 @@ module.exports = async function ([ appstore ]) {
 	    toMutable ( value ) {
 		if ( value instanceof Entity ) {
 		    value		= value.toJSON().content;
-		    value.published_at	= value.published_at.toISOString();
-		    value.last_updated	= value.last_updated.toISOString();
+
+		    if ( value.published_at instanceof Date )
+			value.published_at	= (new Date( value.published_at )).toISOString();
+		    if ( value.last_updated instanceof Date )
+			value.last_updated	= (new Date( value.last_updated )).toISOString();
 		}
 		return value;
 	    },

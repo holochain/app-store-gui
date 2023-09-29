@@ -604,6 +604,28 @@ const common				= {
 
 	return [dna_hash, resource_hash];
     },
+
+    isViewpointAdmin ( group, agent ) {
+	if ( !group )
+	    return false;
+
+	if ( group.admins.find( pubkey => String(pubkey) === String(agent) ) )
+	    return true;
+
+	return false;
+    },
+
+    isViewpointMember ( group, agent ) {
+	if ( !group )
+	    return false;
+
+	if ( common.isViewpointAdmin( group, agent ) )
+	    return true;
+	if ( group.members.find( pubkey => String(pubkey) === String(agent) ) )
+	    return true;
+
+	return false;
+    },
 };
 
 module.exports = common;

@@ -19,6 +19,7 @@ const common				= require('./common.js');
 const filters				= require('./filters.js');
 
 const generics_init			= require('./generic_controllers.js');
+const admin_init			= require('./admin_controllers.js');
 const publishers_init			= require('./publisher_controllers.js');
 const apps_init				= require('./app_controllers.js');
 
@@ -91,6 +92,7 @@ async function setup_clients() {
 
     const openstate			= await openstate_init([ appstore ]);
     const generic_controllers		= await generics_init();
+    const admin_controllers		= await admin_init();
     const publisher_controllers		= await publishers_init();
     const app_controllers		= await apps_init();
 
@@ -100,6 +102,7 @@ async function setup_clients() {
     const route_components		= [
 	[ "/",						generic_controllers.main,		"Main" ],
 	[ "/profile",					generic_controllers.single,		"Profile" ],
+	[ "/admin",					admin_controllers.dashboard,		"Admin" ],
 
 	[ "/publishers",				publisher_controllers.list,		"All publishers" ],
 	[ "/publishers/new",				publisher_controllers.create,		"Add publisher" ],
@@ -151,6 +154,7 @@ async function setup_clients() {
 	    };
 	},
 	"computed": {
+	    ...common.scopedPathComputed( "viewpoint/group", "viewpoint"),
 	    ...common.scopedPathComputed( "agent/me", "agent" ),
 	},
 	async created () {
@@ -168,6 +172,8 @@ async function setup_clients() {
 
 		this.showStatusView( false );
 	    });
+
+	    await this.$openstate.read("viewpoint/group");
 
 	    try {
 		await this.$openstate.get("agent/me");
@@ -198,6 +204,8 @@ async function setup_clients() {
 		"json":			json,
 		"Entity":		EntityArchitect.Entity,
 		"Collection":		EntityArchitect.Collection,
+
+		...holohash,
 
 		console,
 	    };
@@ -290,6 +298,23 @@ async function setup_clients() {
 	    },
 
 	    ...common,
+
+	    isViewpointAdmin () {
+		if ( !this.$root.viewpoint )
+		    return false;
+		if ( !this.$root.agent )
+		    return false;
+
+		return common.isViewpointAdmin( this.$root.viewpoint, this.$root.agent.pubkey.initial )
+	    },
+	    isViewpointMember () {
+		if ( !this.$root.viewpoint )
+		    return false;
+		if ( !this.$root.agent )
+		    return false;
+
+		return common.isViewpointMember( this.$root.viewpoint, this.$root.agent.pubkey.initial )
+	    },
 	},
     });
 

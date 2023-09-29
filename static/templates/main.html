@@ -41,5 +41,38 @@
 	    </div>
 	</div>
     </div>
+    <div v-if="isViewpointMember()" class="px-5">
+	<h4 class="mt-5 mb-3">Removed Apps</h4>
+
+	<div class="row">
+	    <div v-for="app in removed_apps"
+		 class="col-xl-3 col-lg-6 col-md-12 px-1 py-2">
+		 <router-link :to="'/apps/' + app.$id" class="transparent">
+		     <div class="card border-none">
+			 <div class="row g-0">
+			     <div class="col-md-4">
+				 <holochain-img class="rounded overflow-hidden square"
+						:os-path="'appstore/memory/' + app.icon"
+						:mime-type="app.metadata.icon_mime_type"></holochain-img>
+			     </div>
+			     <div class="col-md-8">
+				 <div class="card-body">
+				     <h5 class="card-title mb-0 text-nowrap text-truncate" :title="app.title">
+					 {{ app.title }}
+				     </h5>
+				     <p class="card-text text-nowrap text-truncate" :title="app.subtitle">
+					 {{ app.subtitle }}&nbsp;
+				     </p>
+				     <p class="card-text text-nowrap text-truncate">
+					 <small class="text-muted">Last updated {{ $filters.time( app.last_updated ) }}</small>
+				     </p>
+				 </div>
+			     </div>
+			 </div>
+		     </div>
+		 </router-link>
+	    </div>
+	</div>
+    </div>
 
 </div>

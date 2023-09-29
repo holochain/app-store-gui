@@ -195,12 +195,15 @@ module.exports = async function () {
 		    "datapath":			`app/${id}`,
 		    "publisher_datapath":	`app/${id}/publisher`,
 		    "package_datapath":		`app/${id}/package`,
+		    "ma_history_datapath":	`app/${id}/moderator/actions`,
+		    "ma_datapath":		`app/${id}/moderator/state`,
 		};
 	    },
 	    async created () {
 		await this.mustGet(async () => {
 		    this.$openstate.read( this.publisher_datapath );
 		    await this.$openstate.read( this.datapath );
+		    await this.$openstate.get( this.ma_datapath );
 		});
 
 		this.readDevHubHapp();
@@ -235,10 +238,18 @@ module.exports = async function () {
 		...common.scopedPathComputed( c => c.happ_release_datapath, "happ_release" ),
 		...common.scopedPathComputed( c => c.gui_datapath, "gui" ),
 		...common.scopedPathComputed( c => c.gui_release_datapath, "gui_release" ),
+		...common.scopedPathComputed( c => c.ma_history_datapath, "moderator_actions" ),
+		...common.scopedPathComputed( c => c.ma_datapath, "moderator_action" ),
 
 		deprecationModal () {
-		    console.log( this.$refs );
 		    return new bootstrap.Modal( this.$refs["deprecation-modal"], {
+			"backdrop": "static",
+			"keyboard": false,
+		    });
+		},
+
+		moderatorModal () {
+		    return new bootstrap.Modal( this.$refs["moderator-modal"], {
 			"backdrop": "static",
 			"keyboard": false,
 		    });
@@ -268,11 +279,24 @@ module.exports = async function () {
 		    console.log("App pacakge:", bytes );
 		    this.download( `${this.app.title}.webhapp`, bytes );
 		},
+		showModeratorModal ( remove = true ) {
+		    this.moderator_action$.message		= "";
+		    this.moderator_action$.metadata.remove	= remove;
+
+		    this.moderatorModal.show();
+		},
 		async confirmDeprecation () {
 		    log.normal("Deprecating App %s", this.app.title );
 		    await this.$openstate.write( this.datapath, "deprecation" );
 
 		    this.deprecationModal.hide();
+		},
+		async confirmModerator () {
+		    log.normal("Removing App %s", this.app.title );
+		    await this.$openstate.write( this.ma_datapath );
+		    await this.$openstate.resetMutable( this.ma_datapath );
+
+		    this.moderatorModal.hide();
 		},
 	    },
 	};
