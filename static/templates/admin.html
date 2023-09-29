@@ -1,0 +1,93 @@
+<div v-if="group">
+    <layout-banner :seed="group.$id" class="pb-5">
+	<h2 id="page-title">Admin Dashboard</h2>
+
+	<div slot="spotlight">
+	    <identicon-img size="300" color :seed="group.$id"></identicon-img>
+	</div>
+
+	<div slot="actions">
+	    <router-link :to="'/admin/update'">
+		<a-icon class="btn-primary">
+		    <i class="bi-pencil"></i>
+		</a-icon>
+	    </router-link>
+	</div>
+    </layout-banner>
+
+    <div class="container my-4">
+    </div>
+    <div class="container my-4">
+	<div class="d-flex align-items-center">
+	    <h4 class="col">Admin(s)</h4>
+	</div>
+
+	<div v-for="agent in group$.admins"
+	     class="data-box my-2 d-flex align-items-center gutters gx-2">
+	    <identicon-img :seed="agent" color size="50"></identicon-img>
+	    <label class="col">{{ agent }}</label>
+	    <a-icon v-if="!isMyPubKey( agent )"
+		    class="col-auto btn-danger"
+		    @click="group$.members.splice( $index, 1 );">
+		<i class="bi-dash-lg"></i>
+	    </a-icon>
+	</div>
+
+	<div class="data-box my-2 d-flex align-items-center gutters gx-2">
+	    <div class="col">
+		<input class="form-control" v-model="new_admin" placeholder="Agent ID">
+	    </div>
+	    <identicon-img :seed="new_admin" :color="!!new_admin" size="50"></identicon-img>
+	    <a-icon class="col-auto btn-primary"
+		    @click="group$.admins.push( new AgentPubKey(new_admin) ); new_admin = '';">
+		<i class="bi-plus-lg"></i>
+	    </a-icon>
+	</div>
+
+
+	<div class="d-flex align-items-center">
+	    <h4 class="col">Member(s)</h4>
+	</div>
+
+	<div v-for="agent in group$.members"
+	     class="data-box my-2 d-flex align-items-center gutters gx-2">
+	    <identicon-img :seed="agent" color size="50"></identicon-img>
+	    <label class="col">{{ agent }}</label>
+	    <a-icon v-if="!isMyPubKey( agent )"
+		    class="col-auto btn-danger"
+		    @click="group$.members.splice( $index, 1 );">
+		<i class="bi-dash-lg"></i>
+	    </a-icon>
+	</div>
+
+	<div v-if="!group$?.members?.length" class="card my-2 p-2 text-center text-secondary">
+	    No members
+	</div>
+
+	<div class="data-box my-2 d-flex align-items-center gutters gx-2">
+	    <identicon-img :seed="new_member" :color="!!new_member" size="50"></identicon-img>
+	    <div class="col">
+		<input class="form-control" v-model="new_member" placeholder="Agent ID">
+	    </div>
+	    <a-icon class="col-auto btn-primary"
+		    @click="group$.members.push( new AgentPubKey(new_member) ); new_member = '';">
+		<i class="bi-plus-lg"></i>
+	    </a-icon>
+	</div>
+    </div>
+
+    <div class="container my-4">
+	<div class="d-flex justify-content-end gutters gx-2">
+	    <a v-if="$group.changed"
+	       class="btn btn-outline-warning"
+	       @click="reset()">
+		Cancel Changes
+	    </a>
+	    <a class="btn btn-primary"
+	       @click="update()">
+		Update
+	    </a>
+	</div>
+    </div>
+
+</div>

@@ -24,7 +24,7 @@
     "@whi/holo-hash": "^0.3.0",
     "@whi/holochain-backdrop": "^2.2.1",
     "@whi/holochain-client": "^0.81.0",
-    "@whi/identicons": "^0.1.1",
+    "@whi/identicons": "^0.1.2",
     "@whi/weblogger": "^0.1.5",
     "compressorjs": "^1.2.1",
     "openstate": "^0.2.2",

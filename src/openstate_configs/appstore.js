@@ -49,6 +49,46 @@ async function downloadMemory ( devhub, dna_hash, address, dna_name ) {
 
 
 module.exports				= (appstore, devhub) => ({
+    "Viewpoint Group ID": {
+	"path": "viewpoint/id",
+	async read () {
+	    return new ActionHash("uhCkkbEi3ohtgcLYKF-Q26WCCJCjfbwqUAw0kpDcMrI2gPwZhtqXw");
+	},
+    },
+    "Viewpoint": {
+	"path": "viewpoint/group",
+	adapter ( content ) {
+	    content.admins		= content.admins.map( pk => new AgentPubKey(pk) );
+	    content.members		= content.members.map( pk => new AgentPubKey(pk) );
+	},
+	toMutable ( group ) {
+	    console.log("toMutable", this );
+	    group.published_at		= (new Date( group.published_at )).getTime();
+	    group.last_updated		= (new Date( group.last_updated )).getTime();
+	},
+	async read () {
+	    // Group ID created from CLI running ./create_viewpoint.js
+	    const group_id		= await this.openstate.get("viewpoint/id");
+
+	    return await appstore.call("appstore", "appstore_api", "get_group", group_id );
+	},
+	async update ( _, updated ) {
+	    const base			= this.state.$action;
+	    const group			= this.mutable;
+
+	    console.log("Updating group state", {
+		base,
+		group,
+	    });
+	    try {
+		return await appstore.call("appstore", "appstore_api", "update_group", {
+		    "base": base,
+		    "entry": group,
+		});
+	    } finally {
+	    }
+	},
+    },
     "Agent": {
 	"path": "agent/:id",
 	"readonly": true,
@@ -258,7 +298,26 @@ module.exports				= (appstore, devhub) => ({
 	"path": "apps",
 	"readonly": true,
 	async read () {
-	    const list		= await appstore.call("appstore", "appstore_api", "get_all_apps");
+	    const group_id			= await this.openstate.get("viewpoint/id");
+
+	    const list				= group_id
+		  ? await appstore.call("appstore", "appstore_api", "viewpoint_get_all_apps", group_id )
+		  : await appstore.call("appstore", "appstore_api", "get_all_apps");
+
+	    for ( let app of list ) {
+		const path		= `app/${app.$id}`;
+		this.openstate.state[path]	= app;
+	    }
+
+	    return list;
+	},
+    },
+    "All removed apps": {
+	"path": "apps/removed",
+	"readonly": true,
+	async read () {
+	    const group_id			= await this.openstate.get("viewpoint/id");
+	    const list				= await appstore.call("appstore", "appstore_api", "viewpoint_get_all_removed_apps", group_id );
 
 	    for ( let app of list ) {
 		const path		= `app/${app.$id}`;
@@ -431,6 +490,101 @@ module.exports				= (appstore, devhub) => ({
 		    }
 		}
 	    }
+	},
+    },
+    "App Moderator Actions": {
+	"path": "app/:app_id/moderator/actions",
+	"readonly": true,
+	adapter ( actions ) {
+	    for ( let action of actions ) {
+		action.group_id			= [
+		    new ActionHash( action.group_id[0] ),
+		    new ActionHash( action.group_id[1] ),
+		];
+		action.author			= new AgentPubKey( action.author );
+		action.subject_id		= new ActionHash( action.subject_id );
+		action.published_at		= new Date( action.published_at );
+	    }
+	},
+	async read ({ app_id }) {
+	    const group_id			= await this.openstate.get("viewpoint/id");
+	    const actions			= (await appstore.call("appstore", "appstore_api", "get_moderator_actions", {
+		group_id,
+		app_id,
+	    })); // There could be more than one moderator action history, for now we are
+		 // ignoring everything except the first one.
+
+	    actions.reverse();
+
+	    return actions;
+	},
+    },
+    "App Moderator Remove": {
+	"path": "app/:app_id/moderator/state",
+	"permissions": {
+	    async writable ( ma_state ) {
+		const agent_info	= await this.get("agent/me");
+
+		if ( ma_state && common.hashesAreEqual( ma_state.author, agent_info.pubkey.initial ) )
+		    return true;
+
+		const group		= await this.get("viewpoint/group");
+
+		return common.isViewpointMember( group, agent_info.pubkey.initial );
+	    },
+	},
+	defaultMutable () {
+	    return {
+		"message": "",
+		"metadata": {},
+	    };
+	},
+	async read ({ app_id }) {
+	    const actions			= await this.openstate.get(`app/${app_id}/moderator/actions`);
+
+	    if ( actions.length === 0 )
+		throw new Error(`No moderator state`);
+
+	    return actions.slice(-1)[0];
+	},
+	async create ({ message, metadata }) {
+	    const group_id			= await this.openstate.get("viewpoint/id");
+	    const app_id			= this.params.app_id;
+
+	    try {
+		return await appstore.call("appstore", "appstore_api", "update_moderated_state", {
+		    group_id,
+		    app_id,
+		    message,
+		    metadata,
+		});
+	    } finally {
+		this.openstate.read(`app/${app_id}/moderator/actions`);
+	    }
+	},
+	async update ({ app_id }, { message, metadata }) {
+	    const group_id			= await this.openstate.get("viewpoint/id");
+
+	    console.log("Updating moderator state", {
+		app_id,
+		group_id,
+		message,
+		metadata,
+	    });
+	    try {
+		return await appstore.call("appstore", "appstore_api", "update_moderated_state", {
+		    group_id,
+		    app_id,
+		    message,
+		    metadata,
+		});
+	    } finally {
+		this.openstate.read(`app/${app_id}/moderator/actions`);
+	    }
+	},
+	validation ( data, rejections, intent ) {
+	    if ( !(data.message && data.message.trim()) )
+		rejections.push("Reason is required");
 	},
     },
     "App Publisher": {

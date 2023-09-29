@@ -23,6 +23,20 @@
     </layout-banner>
 
     <div class="container my-4">
+	<div v-if="moderator_action?.metadata?.remove === true"
+	     class="alert alert-warning" role="alert">
+	    <strong>This app has been removed from the App Store index</strong><br>
+	    <figure class="mt-2 ms-2">
+		<blockquote class="blockquote">
+		    <p class="bg-white text-pre-wrap">{{ moderator_action.message }}</p>
+		</blockquote>
+		<figcaption class="blockquote-footer align-items-center d-flex flex-row">
+		    Moderator Message
+		    <identicon-img class="mx-1" :seed="moderator_action.author" color size="20"></identicon-img>
+		</figcaption>
+	    </figure>
+	</div>
+
 	<div class="d-flex align-items-center">
 	    <h4 class="col">Details</h4>
 	    <a-icon class="col-auto btn-primary"
@@ -112,9 +126,68 @@
 	</div>
     </div>
 
-    <div v-if="$app.writable" class="container my-4 text-end">
-	<div class="btn btn-danger" @click="deprecationModal.show()">
+    <div v-if="$app.writable || $moderator_action.writable"
+	 class="container my-4 text-end">
+	<template v-if="isViewpointMember()">
+	    <div v-if="!moderator_action?.metadata?.remove"
+		 class="btn btn-outline-warning mx-3"
+		 @click="showModeratorModal( true )">
+		Remove App
+	    </div>
+	    <div v-else
+		 class="btn btn-outline-warning mx-3"
+		 @click="showModeratorModal( false )">
+		Un-remove App
+	    </div>
+	</template>
+
+	<div v-if="$app.writable" class="btn btn-danger" @click="deprecationModal.show()">
 	    Deprecate
+	</div>
+    </div>
+
+    <div v-if="isViewpointMember()" class="container my-4">
+	<div class="d-flex align-items-center">
+	    <h4 class="col">Moderator Actions</h4>
+	</div>
+
+	<div v-if="moderator_actions?.length"
+	     v-for="action in moderator_actions"
+	     class="card my-2 p-2">
+	    <div class="row align-items-center mb-3">
+		<div class="col-md-10">
+		    <h5>Authored by <code>{{ action.author }}</code></h5>
+		    <span class="text-secondary">at {{ action.published_at }}</span>
+		</div>
+		<div class="col-md-2 text-end">
+		    <identicon-img :seed="action.author" color size="50"></identicon-img>
+		</div>
+	    </div>
+	    <div class="row">
+		<div class="col-md-6 col-sm-12">
+		    <table class="table table-bordered table-striped">
+			<thead>
+			    <tr>
+				<th class="text-end">Control</th>
+				<th>Setting</th>
+			    </tr>
+			</thead>
+			<tbody>
+			    <tr v-for="(value, key) in action.metadata">
+				<td class="text-end">{{ key }}</td>
+				<td><code>{{ value }}</code></td>
+			    </tr>
+			</tbody>
+		    </table>
+		</div>
+		<div class="col-md-6 col-sm-12">
+		    <strong>Message:</strong>
+		    <pre class="my-1 px-2 py-1 bg-light">{{ action.message }}</pre>
+		</div>
+	    </div>
+	</div>
+	<div v-else class="card my-2 p-2 text-center text-secondary">
+	    No results
 	</div>
     </div>
 
@@ -138,6 +211,46 @@
 		<div class="modal-footer justify-content-center">
 		    <a @click="deprecationModal.hide()" class="btn btn-secondary">Cancel</a>
 		    <a @click="confirmDeprecation()" class="btn btn-danger">Confirm</a>
+		</div>
+	    </div>
+	</div>
+    </div>
+
+    <div ref="moderator-modal" class="modal fade">
+	<div class="modal-dialog modal-dialog-centered">
+	    <div class="modal-content"
+		 :class="{ 'was-validated': $app.failed }">
+		<div class="modal-header">
+		    <h5 class="modal-title">Moderator Action</h5>
+		</div>
+		<div v-if="!$moderator_action.reading && moderator_action$ !== null"
+		     class="modal-body">
+		    <p>You are about to modify the state of App '{{ app.title }}'</p>
+
+		    <label class="form-label">Reason</label>
+		    <textarea class="form-control"
+			      v-model="moderator_action$.message"
+			      :disabled="$moderator_action.writing"
+			      required></textarea>
+
+
+		    <h6 class="mt-3">Controls</h6>
+		    <div class="form-check">
+			<input id="remove-app-checkbox"
+			       class="form-check-input" type="checkbox"
+			       v-model="moderator_action$.metadata.remove">
+			<label class="form-check-label" for="remove-app-checkbox">
+			    Remove App
+			</label>
+		    </div>
+		</div>
+		<div class="modal-footer justify-content-center">
+		    <a @click="moderatorModal.hide()"
+		       class="btn btn-secondary"
+		       :class="{ 'disabled': $moderator_action.writing }">Cancel</a>
+		    <a @click="confirmModerator()"
+		       class="btn btn-danger"
+		       :class="{ 'disabled': $moderator_action.writing }">Confirm</a>
 		</div>
 	    </div>
 	</div>
