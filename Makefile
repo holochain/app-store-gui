@@ -22,8 +22,8 @@ setup:			$(HAPPS)
 	node tests/setup.js app-store
 	node tests/setup.js devhub	bobby
 
-$(DEVHUB_HAPP):
-	$(error Download missing hApp into location ./$@)
+$(DEVHUB_HAPP):		../devhub-dnas/devhub.happ
+	cp $< $@
 $(APPSTORE_HAPP):	../app-store-dnas/appstore.happ
 	cp $< $@
 copy-devhub-from-local:
